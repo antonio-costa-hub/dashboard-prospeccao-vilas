@@ -510,128 +510,67 @@
   .saved-toast.show { opacity: 1; transform: translateY(0); }
 
   /* ══════════════════════════════════════════
-     MOBILE — até 768px
+     FLUID — escala para qualquer tela
+     Sem breakpoints fixos. Layout reage ao
+     espaço real disponível via clamp() e
+     ResizeObserver no JS.
   ══════════════════════════════════════════ */
-  @media (max-width: 768px) {
 
-    /* Header compacto */
-    .header { padding: 12px 16px; gap: 10px; }
-    .header-title { font-size: 14px; }
-    .header-meta { display: none; }
+  /* Tipografia e espaçamento fluidos */
+  body          { font-size: clamp(11px, 1.3vw, 13px); }
+  .header       { padding: clamp(10px,2vw,18px) clamp(14px,3vw,28px); gap: clamp(8px,1.5vw,20px); }
+  .header-title { font-size: clamp(13px, 2vw, 18px); }
+  .header-meta  { font-size: clamp(9px, 1vw, 11px); }
 
-    /* Stats em 2×2 */
-    .stats-bar { flex-wrap: wrap; }
-    .stat { flex: 1 1 50%; min-width: 0; padding: 12px 14px; }
-    .stat-num { font-size: 18px; }
+  /* Stats: cada card tem mínimo 120px, envolve naturalmente */
+  .stats-bar { flex-wrap: wrap; }
+  .stat       { flex: 1 1 120px; padding: clamp(10px,1.5vw,14px) clamp(12px,2vw,20px); }
+  .stat-num   { font-size: clamp(16px, 2.5vw, 22px); }
 
-    /* Pipeline oculto (muito pequeno pra mobile) */
-    .pipeline-bar { display: none; }
+  /* Pipeline: legenda some quando espaço < 600px */
+  .pipeline-bar    { padding: clamp(8px,1.5vw,10px) clamp(14px,3vw,28px); }
+  .pipeline-legend { display: flex; overflow: hidden; max-width: clamp(0px, 60vw, 999px); }
 
-    /* Toolbar em coluna */
-    .toolbar {
-      flex-direction: column;
-      align-items: stretch;
-      padding: 10px 12px;
-      gap: 8px;
-    }
-    .search-wrapper { width: 100%; }
-    .search-box { width: 100%; }
-    .filter-pills { gap: 6px; }
-    .filter-btn { font-size: 10px; padding: 6px 10px; white-space: nowrap; }
-    .export-btn { width: 100%; padding: 9px; text-align: center; }
+  /* Toolbar fluida */
+  .toolbar {
+    padding: clamp(8px,1.5vw,14px) clamp(12px,2.5vw,28px);
+    gap: clamp(6px,1vw,10px);
+    flex-wrap: nowrap;
+  }
+  .search-box   { width: clamp(140px, 20vw, 220px); }
+  .filter-btn   { font-size: clamp(10px, 1.1vw, 11px); padding: clamp(5px,0.8vw,7px) clamp(8px,1.2vw,14px); }
+  .export-btn   { font-size: clamp(10px, 1vw, 11px); padding: clamp(5px,0.8vw,7px) clamp(10px,1.5vw,16px); white-space: nowrap; }
 
-    /* Layout: coluna única, painel como drawer */
-    .main {
-      display: block;
-      height: auto;
-      min-height: calc(100vh - 200px);
-    }
-
-    /* Tabela scroll horizontal */
-    .table-section {
-      overflow-x: auto;
-      border-right: none;
-      border-bottom: 1px solid var(--border);
-    }
-    table { min-width: 540px; }
-    th, td { padding: 8px 10px; font-size: 10px; }
-    .lead-name { font-size: 11px; }
-    .stars { font-size: 10px; }
-    .stars-count { display: none; }
-    .wpp-chip { display: none; }
-    .table-links { display: none; }
-
-    /* Painel de detalhe como sheet na parte inferior */
-    .detail-panel {
-      display: flex !important;
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      height: 70vh;
-      background: var(--surface);
-      border-top: 2px solid var(--border);
-      border-radius: 18px 18px 0 0;
-      z-index: 200;
-      transform: translateY(100%);
-      transition: transform 0.35s cubic-bezier(.4,0,.2,1);
-      box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
-      flex-direction: column;
-    }
-    .detail-panel.mobile-open {
-      transform: translateY(0);
-    }
-
-    /* Handle drag indicator */
-    .detail-panel::before {
-      content: '';
-      display: block;
-      width: 36px; height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      margin: 10px auto 0;
-      flex-shrink: 0;
-    }
-
-    /* Botão fechar */
-    .mobile-close-btn {
-      display: flex !important;
-    }
-
-    .detail-content {
-      padding: 14px 16px;
-      gap: 14px;
-    }
-    .detail-name { font-size: 14px; }
-    .detail-addr { font-size: 10px; }
-
-    /* Overlay escuro */
-    .mobile-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 199;
-    }
-    .mobile-overlay.show { display: block; }
-
-    /* Toast acima do painel */
-    .saved-toast { bottom: 72vh; }
+  /* Grid principal: painel encolhe com a tela (mín 260px) */
+  .main {
+    grid-template-columns: 1fr clamp(260px, 28vw, 380px);
+    height: calc(100dvh - var(--chrome-h, 175px));
   }
 
-  /* ══════════════════════════════════════════
-     TABLET — 769px a 1024px
-  ══════════════════════════════════════════ */
-  @media (min-width: 769px) and (max-width: 1024px) {
-    .main { grid-template-columns: 1fr 300px; }
-    .pipeline-legend { display: none; }
-    .header-title { font-size: 15px; }
-    .stars-count { display: none; }
-  }
+  /* Tabela fluida */
+  th, td        { padding: clamp(6px,1vw,9px) clamp(8px,1.2vw,14px); }
+  .lead-name    { font-size: clamp(10px, 1.2vw, 12px); }
+  .detail-content { padding: clamp(12px,2vw,20px); gap: clamp(12px,1.5vw,18px); }
+  .detail-name  { font-size: clamp(13px, 2vw, 16px); }
 
-  /* Botão fechar — só aparece no mobile */
+  /* ── MODO DRAWER (classe adicionada pelo ResizeObserver) ──
+     Ativa quando a viewport é estreita demais para duas colunas */
+
+  /* Overlay */
+  .mobile-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.52);
+    z-index: 199;
+  }
+  .mobile-overlay.show { display: block; }
+
+  /* Botão fechar — oculto por padrão, só no drawer */
   .mobile-close-btn {
     display: none;
     position: absolute;
-    top: 18px; right: 16px;
+    top: 16px; right: 14px;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -641,7 +580,58 @@
     cursor: pointer;
     font-family: 'DM Mono', monospace;
     z-index: 10;
+    align-items: center;
+    gap: 5px;
   }
+
+  /* Drawer ativo */
+  body.drawer-mode .main {
+    display: block;
+    height: auto;
+  }
+  body.drawer-mode .table-section {
+    overflow-x: auto;
+    border-right: none;
+    min-height: calc(100dvh - var(--chrome-h, 175px));
+  }
+  body.drawer-mode table         { min-width: 500px; }
+  body.drawer-mode .stars-count  { display: none; }
+  body.drawer-mode .wpp-chip     { display: none; }
+  body.drawer-mode .table-links  { display: none; }
+  body.drawer-mode .pipeline-bar { display: none; }
+  body.drawer-mode .search-box   { width: 100%; }
+  body.drawer-mode .toolbar      { flex-direction: column; align-items: stretch; }
+  body.drawer-mode .export-btn   { width: 100%; text-align: center; }
+  body.drawer-mode .header-meta  { display: none; }
+
+  /* Painel vira bottom sheet no drawer */
+  body.drawer-mode .detail-panel {
+    display: flex !important;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 72dvh;
+    background: var(--surface);
+    border-top: 2px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    z-index: 200;
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 -10px 50px rgba(0,0,0,0.55);
+    flex-direction: column;
+    overflow: hidden;
+  }
+  body.drawer-mode .detail-panel::before {
+    content: '';
+    display: block;
+    width: 38px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 12px auto 4px;
+    flex-shrink: 0;
+  }
+  body.drawer-mode .detail-panel.mobile-open { transform: translateY(0); }
+  body.drawer-mode .mobile-close-btn         { display: flex !important; }
+  body.drawer-mode .saved-toast              { bottom: 74dvh; }
 
   /* ── HEADER GRADIENT BORDER ── */
   .header {
@@ -1349,7 +1339,7 @@ function selectLead(id) {
   const row = document.getElementById('row-'+id);
   if (row) row.classList.add('selected');
   renderDetail();
-  if (isMobile()) openMobilePanel();
+  if (isDrawer()) openMobilePanel();
 }
 
 function renderDetail() {
@@ -1552,9 +1542,29 @@ function exportCSV() {
 }
 
 // ============================================================
-// MOBILE DRAWER
+// DRAWER — ativa quando viewport não cabe duas colunas
+// Threshold: quando a coluna de detalhe ficaria < 240px
 // ============================================================
-function isMobile() { return window.innerWidth <= 768; }
+const DRAWER_THRESHOLD = 660; // px — abaixo disso vai pra drawer
+
+function isDrawer() { return document.body.classList.contains('drawer-mode'); }
+
+function syncLayout() {
+  const w = window.innerWidth;
+  const drawer = w < DRAWER_THRESHOLD;
+  document.body.classList.toggle('drawer-mode', drawer);
+
+  // Ajusta altura do main para descontar o chrome real
+  const chrome = document.querySelector('.header')?.offsetHeight +
+                 document.querySelector('.stats-bar')?.offsetHeight +
+                 (drawer ? 0 : document.querySelector('.pipeline-bar')?.offsetHeight || 0) +
+                 document.querySelector('.toolbar')?.offsetHeight || 175;
+  document.documentElement.style.setProperty('--chrome-h', chrome + 'px');
+}
+
+// Reage a qualquer mudança de tamanho (rotação, resize, teclado virtual)
+const _ro = new ResizeObserver(() => syncLayout());
+_ro.observe(document.documentElement);
 
 function openMobilePanel() {
   document.getElementById('detailPanel').classList.add('mobile-open');
@@ -1579,7 +1589,7 @@ function closeMobilePanel() {
 // ============================================================
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && selectedId) {
-    if (isMobile()) { closeMobilePanel(); return; }
+    if (isDrawer()) { closeMobilePanel(); return; }
     selectedId = null;
     document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
     document.getElementById('detailEmpty').style.display = '';
@@ -1596,6 +1606,7 @@ document.addEventListener('keydown', (e) => {
 // ============================================================
 // INIT
 // ============================================================
+syncLayout();
 renderTable();
 // animate stat counters on first load
 setTimeout(() => animateCounters(['stat-total','stat-p1','stat-contatados','stat-fechados']), 100);
