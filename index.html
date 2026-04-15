@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Prospecção — Vilas do Atlântico</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --border: #252a3a;
+    --accent: #00e5a0;
+    --accent2: #ff6b35;
+    --accent3: #7c6aff;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --p1: #00e5a0;
+    --p2: #fbbf24;
+    --p3: #ef4444;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    flex: 1;
+  }
+  .header-meta {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat {
+    flex: 1;
+    background: var(--surface);
+    padding: 14px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+  }
+  .stat-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .stat-num.green { color: var(--p1); }
+  .stat-num.yellow { color: var(--p2); }
+  .stat-num.orange { color: var(--accent2); }
+  .stat-num.purple { color: var(--accent3); }
+
+  /* TOOLBAR */
+  .toolbar {
+    padding: 14px 28px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .search-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    width: 220px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--muted); }
+
+  .filter-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 14px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all .2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,160,0.07);
+  }
+
+  .spacer { flex: 1; }
+
+  .export-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    padding: 7px 16px;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: opacity .2s;
+  }
+  .export-btn:hover { opacity: 0.85; }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    height: calc(100vh - 178px);
+  }
+
+  /* TABLE SECTION */
+  .table-section {
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+
+  /* NICHO GROUP */
+  .nicho-group { border-bottom: 1px solid var(--border); }
+  .nicho-header {
+    padding: 10px 20px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    cursor: pointer;
+    user-select: none;
+  }
+  .nicho-header:hover { background: #1e2436; }
+  .nicho-icon { font-size: 14px; }
+  .nicho-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  .nicho-count {
+    background: var(--border);
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 10px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  .nicho-chevron { color: var(--muted); font-size: 10px; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    padding: 8px 14px;
+    text-align: left;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    position: sticky;
+    top: 36px;
+    z-index: 5;
+  }
+  tr.lead-row {
+    border-bottom: 1px solid rgba(37,42,58,0.6);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  tr.lead-row:hover { background: rgba(255,255,255,0.03); }
+  tr.lead-row.selected { background: rgba(0,229,160,0.06); }
+  td {
+    padding: 9px 14px;
+    vertical-align: middle;
+  }
+  .lead-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .lead-phone {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  /* PRIORITY BADGE */
+  .priority {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .p1 { background: rgba(0,229,160,0.12); color: var(--p1); border: 1px solid rgba(0,229,160,0.3); }
+  .p2 { background: rgba(251,191,36,0.12); color: var(--p2); border: 1px solid rgba(251,191,36,0.3); }
+  .p3 { background: rgba(239,68,68,0.12); color: var(--p3); border: 1px solid rgba(239,68,68,0.3); }
+
+  /* STATUS BADGE */
+  .status {
+    display: inline-block;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border: 1px solid;
+  }
+  .s-nao-contatado { background: rgba(107,114,128,0.1); color: var(--muted); border-color: rgba(107,114,128,0.3); }
+  .s-contatado { background: rgba(124,106,255,0.12); color: var(--accent3); border-color: rgba(124,106,255,0.3); }
+  .s-interesse { background: rgba(251,191,36,0.12); color: var(--p2); border-color: rgba(251,191,36,0.3); }
+  .s-reuniao { background: rgba(255,107,53,0.12); color: var(--accent2); border-color: rgba(255,107,53,0.3); }
+  .s-fechado { background: rgba(0,229,160,0.12); color: var(--p1); border-color: rgba(0,229,160,0.3); }
+  .s-sem-interesse { background: rgba(239,68,68,0.12); color: var(--p3); border-color: rgba(239,68,68,0.3); }
+
+  /* STARS */
+  .stars { color: var(--p2); font-size: 11px; letter-spacing: -1px; }
+  .stars-count { color: var(--muted); font-size: 10px; margin-left: 3px; }
+
+  /* DETAIL PANEL */
+  .detail-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .detail-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--muted);
+  }
+  .detail-empty-icon { font-size: 36px; opacity: 0.3; }
+  .detail-empty-text { font-size: 12px; }
+
+  .detail-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: none;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .detail-content.visible { display: flex; }
+
+  .detail-top {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-nicho-tag {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+  }
+  .detail-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .detail-addr { color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+  .detail-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .detail-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    min-width: 70px;
+  }
+
+  /* FIELD SECTIONS */
+  .section-title {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  /* STATUS SELECTOR */
+  .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .status-opt {
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 10px;
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    transition: all .15s;
+    font-family: 'DM Mono', monospace;
+  }
+  .status-opt:hover, .status-opt.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,160,0.07);
+  }
+
+  /* PRIORITY SELECTOR */
+  .priority-grid {
+    display: flex;
+    gap: 6px;
+  }
+  .priority-opt {
+    flex: 1;
+    padding: 6px;
+    border-radius: 5px;
+    font-size: 10px;
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    transition: all .15s;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .priority-opt.p1-opt:hover, .priority-opt.p1-opt.active { border-color: var(--p1); color: var(--p1); background: rgba(0,229,160,0.07); }
+  .priority-opt.p2-opt:hover, .priority-opt.p2-opt.active { border-color: var(--p2); color: var(--p2); background: rgba(251,191,36,0.07); }
+  .priority-opt.p3-opt:hover, .priority-opt.p3-opt.active { border-color: var(--p3); color: var(--p3); background: rgba(239,68,68,0.07); }
+
+  /* NOTES TEXTAREA */
+  .notes-field {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    width: 100%;
+    min-height: 90px;
+    resize: vertical;
+    outline: none;
+    transition: border-color .2s;
+    line-height: 1.6;
+  }
+  .notes-field:focus { border-color: var(--accent); }
+  .notes-field::placeholder { color: var(--muted); }
+
+  /* SCRIPT SECTION */
+  .script-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent3);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 11px;
+    line-height: 1.8;
+    color: #c8cfe0;
+    white-space: pre-wrap;
+    position: relative;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--border);
+    border: none;
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--muted);
+    font-size: 9px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    transition: all .15s;
+    text-transform: uppercase;
+  }
+  .copy-btn:hover { color: var(--accent); }
+
+  /* SAVE BTN */
+  .save-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: opacity .2s;
+  }
+  .save-btn:hover { opacity: 0.85; }
+  .save-btn:active { transform: scale(0.99); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* COLLAPSED — handled by max-height transition below */
+
+  .tel-link { color: var(--accent); text-decoration: none; }
+  .tel-link:hover { text-decoration: underline; }
+
+  .links-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-size: 10px;
+    text-decoration: none;
+    border: 1px solid;
+    transition: opacity .15s;
+    white-space: nowrap;
+    font-family: 'DM Mono', monospace;
+  }
+  .link-chip:hover { opacity: 0.75; }
+  .link-chip.ig { color: #e879f9; border-color: rgba(232,121,249,0.35); background: rgba(232,121,249,0.07); }
+  .link-chip.site { color: var(--accent3); border-color: rgba(124,106,255,0.35); background: rgba(124,106,255,0.07); }
+  .link-chip.maps { color: #60a5fa; border-color: rgba(96,165,250,0.35); background: rgba(96,165,250,0.07); }
+
+  .table-links { display: flex; gap: 4px; margin-top: 3px; }
+
+  .rating-row { display: flex; align-items: center; gap: 4px; }
+
+  .saved-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--accent);
+    color: #000;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all .3s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .saved-toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; }
+    .detail-panel { display: none; }
+  }
+
+  /* ── HEADER GRADIENT BORDER ── */
+  .header {
+    overflow: hidden;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--accent) 30%, var(--accent3) 60%, var(--accent2) 80%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 4s linear infinite;
+  }
+
+  /* ── KEYFRAMES ── */
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
+    50%       { box-shadow: 0 0 10px 3px rgba(0,229,160,0.45); }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── STAT PROGRESS BAR ── */
+  .stat-progress {
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .stat-progress-fill {
+    height: 100%;
+    border-radius: 1px;
+    width: 0%;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+  }
+  .stat-progress-fill.green-fill  { background: var(--p1); }
+  .stat-progress-fill.yellow-fill { background: var(--p2); }
+  .stat-progress-fill.orange-fill { background: var(--accent2); }
+  .stat-progress-fill.purple-fill { background: var(--accent3); }
+
+  /* ── PIPELINE BAR ── */
+  .pipeline-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pipeline-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .pipeline-track {
+    display: flex;
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    gap: 1px;
+    background: var(--border);
+  }
+  .pipeline-seg {
+    height: 100%;
+    transition: width 0.7s cubic-bezier(.4,0,.2,1);
+    position: relative;
+  }
+  .pipeline-seg:first-child { border-radius: 3px 0 0 3px; }
+  .pipeline-seg:last-child  { border-radius: 0 3px 3px 0; }
+  .pipeline-legend {
+    display: flex;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+  .pipeline-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .pipeline-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pipeline-item strong {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--text);
+    font-size: 10px;
+  }
+
+  /* ── TOOLBAR SCROLL ── */
+  .toolbar {
+    flex-wrap: nowrap !important;
+    overflow: hidden;
+    gap: 8px;
+  }
+  .filter-pills {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex: 1;
+    position: relative;
+  }
+  .filter-pills::-webkit-scrollbar { display: none; }
+
+  /* ── SEARCH WRAPPER ── */
+  .search-wrapper {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .search-box {
+    padding-left: 30px !important;
+    padding-right: 28px !important;
+  }
+  .search-box:focus {
+    box-shadow: 0 0 0 2px rgba(0,229,160,0.18);
+  }
+  .search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 3px;
+    display: none;
+    transition: color 0.15s;
+  }
+  .search-clear.show { display: block; }
+  .search-clear:hover { color: var(--text); }
+
+  /* ── STAGGERED ROW ANIMATIONS ── */
+  tr.lead-row {
+    animation: fadeInUp 0.28s ease both;
+  }
+
+  /* ── P1 PULSE ── */
+  .priority.p1 {
+    animation: pulseGlow 2.2s ease-in-out infinite;
+  }
+
+  /* ── NICHO CHEVRON ROTATION ── */
+  .nicho-chevron {
+    transition: transform 0.3s ease;
+    display: inline-block;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .nicho-chevron.collapsed {
+    transform: rotate(-90deg);
+  }
+
+  /* ── COLLAPSIBLE MAX-HEIGHT ── */
+  .nicho-body {
+    max-height: 4000px;
+    overflow: hidden;
+    transition: max-height 0.45s ease;
+  }
+  .nicho-body.collapsed {
+    max-height: 0 !important;
+    display: block !important;
+  }
+
+  /* ── DETAIL PANEL SLIDE-IN ── */
+  .detail-content.visible {
+    display: flex;
+    animation: slideInRight 0.28s ease;
+  }
+
+  /* ── SECTION TITLE REDESIGN ── */
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 8px;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── STATUS OPT DISTINCT COLORS ── */
+  .status-opt[data-v="contatado"]:hover,
+  .status-opt[data-v="contatado"].active   { border-color: var(--accent3); color: var(--accent3); background: rgba(124,106,255,0.08); }
+  .status-opt[data-v="interesse"]:hover,
+  .status-opt[data-v="interesse"].active   { border-color: var(--p2); color: var(--p2); background: rgba(251,191,36,0.08); }
+  .status-opt[data-v="reuniao"]:hover,
+  .status-opt[data-v="reuniao"].active     { border-color: var(--accent2); color: var(--accent2); background: rgba(255,107,53,0.08); }
+  .status-opt[data-v="fechado"]:hover,
+  .status-opt[data-v="fechado"].active     { border-color: var(--p1); color: var(--p1); background: rgba(0,229,160,0.08); }
+  .status-opt[data-v="sem-interesse"]:hover,
+  .status-opt[data-v="sem-interesse"].active { border-color: var(--p3); color: var(--p3); background: rgba(239,68,68,0.08); }
+
+  /* ── WHATSAPP CHIP ── */
+  .wpp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 9px;
+    text-decoration: none;
+    border: 1px solid rgba(37,211,102,0.35);
+    background: rgba(37,211,102,0.07);
+    color: #25d366;
+    opacity: 0;
+    transition: opacity 0.18s;
+    white-space: nowrap;
+    font-family: 'DM Mono', monospace;
+    margin-left: 6px;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  tr.lead-row:hover .wpp-chip { opacity: 1; }
+
+  /* ── SAVE BUTTON STATES ── */
+  .save-btn .btn-spinner {
+    display: inline-block;
+    width: 11px; height: 11px;
+    border: 2px solid rgba(0,0,0,0.25);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.55s linear infinite;
+    vertical-align: middle;
+    margin-right: 5px;
+  }
+
+  /* ── STARS CSS ── */
+  .star { letter-spacing: -1px; }
+  .star.full  { color: var(--p2); }
+  .star.half  { color: var(--p2); opacity: 0.5; }
+  .star.empty { color: var(--border); }
+
+  /* ── TOAST PILL REDESIGN ── */
+  .saved-toast {
+    border-radius: 24px !important;
+    padding: 10px 22px !important;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 24px rgba(0,229,160,0.28);
+    font-size: 12px !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">⚡ DASHBOARD DE PROSPECÇÃO</div>
+  <div class="header-meta" id="header-meta">Vilas do Atlântico · Lauro de Freitas, BA</div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-num green" id="stat-total">0</span>
+    <span class="stat-label">Total Leads</span>
+    <div class="stat-progress"><div class="stat-progress-fill green-fill" id="prog-total"></div></div>
+  </div>
+  <div class="stat">
+    <span class="stat-num yellow" id="stat-p1">0</span>
+    <span class="stat-label">Alta Prioridade</span>
+    <div class="stat-progress"><div class="stat-progress-fill yellow-fill" id="prog-p1"></div></div>
+  </div>
+  <div class="stat">
+    <span class="stat-num orange" id="stat-contatados">0</span>
+    <span class="stat-label">Contatados</span>
+    <div class="stat-progress"><div class="stat-progress-fill orange-fill" id="prog-contatados"></div></div>
+  </div>
+  <div class="stat">
+    <span class="stat-num purple" id="stat-fechados">0</span>
+    <span class="stat-label">Fechados</span>
+    <div class="stat-progress"><div class="stat-progress-fill purple-fill" id="prog-fechados"></div></div>
+  </div>
+</div>
+
+<div class="pipeline-bar" id="pipelineBar">
+  <span class="pipeline-label">Pipeline</span>
+  <div class="pipeline-track" id="pipelineTrack"></div>
+  <div class="pipeline-legend" id="pipelineLegend"></div>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrapper">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-box" id="searchInput" placeholder="Buscar negócio..." oninput="filterLeads(this.value)" />
+    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Limpar">×</button>
+  </div>
+  <div class="filter-pills">
+    <button class="filter-btn active" onclick="filterNicho('todos', this)">Todos</button>
+    <button class="filter-btn" onclick="filterNicho('restaurante', this)">🍽️ Food</button>
+    <button class="filter-btn" onclick="filterNicho('estetica', this)">💆 Estética</button>
+    <button class="filter-btn" onclick="filterNicho('saude', this)">🏥 Saúde</button>
+    <button class="filter-btn" onclick="filterNicho('academia', this)">💪 Fitness</button>
+    <button class="filter-btn" onclick="filterNicho('salao', this)">✂️ Beleza</button>
+    <button class="filter-btn" onclick="filterNicho('pet', this)">🐾 Pet</button>
+    <button class="filter-btn" onclick="filterNicho('imoveis', this)">🏠 Imóveis</button>
+    <button class="filter-btn" onclick="filterNicho('educacao', this)">🎓 Educação</button>
+    <button class="filter-btn" onclick="filterNicho('moda', this)">👗 Moda</button>
+    <button class="filter-btn" onclick="filterNicho('juridico', this)">⚖️ Jurídico</button>
+  </div>
+  <button class="export-btn" onclick="exportCSV()">↓ CSV</button>
+</div>
+
+<div class="main">
+  <div class="table-section" id="tableSection"></div>
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-empty" id="detailEmpty">
+      <div class="detail-empty-icon">←</div>
+      <div class="detail-empty-text">Selecione um lead para editar</div>
+    </div>
+    <div class="detail-content" id="detailContent"></div>
+  </div>
+</div>
+
+<div class="saved-toast" id="toast">✓ Salvo com sucesso</div>
+
+<script>
+// ============================================================
+// DATA — 40 leads mapeados
+// ============================================================
+const nichos = [
+  { id: 'restaurante', name: 'Food & Restaurantes', icon: '🍽️', color: '#ff6b35' },
+  { id: 'estetica',    name: 'Clínicas Estéticas',  icon: '💆', color: '#e879f9' },
+  { id: 'saude',       name: 'Saúde & Nutrição',    icon: '🏥', color: '#38bdf8' },
+  { id: 'academia',    name: 'Fitness & Academia',   icon: '💪', color: '#00e5a0' },
+  { id: 'salao',       name: 'Beleza & Salão',       icon: '✂️', color: '#fbbf24' },
+  { id: 'pet',         name: 'Pet Shop & Vet',       icon: '🐾', color: '#a78bfa' },
+  { id: 'imoveis',     name: 'Imóveis',              icon: '🏠', color: '#60a5fa' },
+  { id: 'educacao',    name: 'Educação & Cursos',    icon: '🎓', color: '#34d399' },
+  { id: 'moda',        name: 'Moda & Varejo',        icon: '👗', color: '#f472b6' },
+  { id: 'juridico',    name: 'Jurídico & Consultoria', icon: '⚖️', color: '#fb923c' },
+];
+
+const allLeads = [
+  // RESTAURANTES
+  { id:1, nicho:'restaurante', name:'Restaurante Donana', phone:'(71) 3379-4364', rating:4.6, reviews:3033, addr:'Av. Praia de Itapuã, QD04 LT06 - Vilas', priority:'P1', website:false, obs:'3K+ reviews. Sem site. Oportunidade enorme de tráfego pago.', status:'nao-contatado', instagram:'https://instagram.com/donanarestaurante', maps:'https://maps.google.com/?cid=2179164227317637632' },
+  { id:2, nicho:'restaurante', name:'Ki-Mukeka', phone:'(71) 3369-5381', rating:4.6, reviews:1453, addr:'R. Praia do Tubarão, 70 - Vilas', priority:'P1', website:false, obs:'Especialidade em moqueca. Grande volume de avaliações. Rede com 34K seguidores no IG.', status:'nao-contatado', instagram:'https://instagram.com/kimukeka', maps:'https://maps.google.com/?cid=2402224636865959270' },
+  { id:3, nicho:'restaurante', name:'Mariposa - Vilas do Atlântico', phone:'(71) 3018-4690', rating:4.4, reviews:2813, addr:'Av. Praia de Itapuã, s/n - Vilas', priority:'P1', website:true, obs:'Bar + música ao vivo. 38K seguidores no Instagram. Tem site mariposa.com.br.', status:'nao-contatado', instagram:'https://instagram.com/mariposavilas', site:'https://www.mariposa.com.br', maps:'https://maps.google.com/?cid=6016212904337810409' },
+  { id:4, nicho:'restaurante', name:'Camarão Vilas', phone:'(71) 4009-4949', rating:4.5, reviews:1597, addr:'Av. Praia de Itapuã, 805 - Vilas', priority:'P1', website:false, obs:'1.6K reviews. Tem Linktree com Instagram e Facebook linkados.', status:'nao-contatado', site:'https://linktr.ee/camaraovilas', maps:'https://maps.google.com/?cid=4300696539975391504' },
+  { id:5, nicho:'restaurante', name:'Oscarito Restaurant', phone:'(71) 4113-1306', rating:4.5, reviews:1097, addr:'Al. Praia do Tubarão, QA12 - Vilas', priority:'P2', website:false, obs:'Churrasco e buffet. Bom volume.', status:'nao-contatado', maps:'https://maps.google.com/?cid=2732622065490968672' },
+
+  // ESTÉTICA
+  { id:6, nicho:'estetica', name:'BellaClin Vilas', phone:'(71) 3508-5704', rating:4.8, reviews:29, addr:'R. Itagi, 599 Ed. Mediterrâneo - Pitangueiras', priority:'P1', website:true, obs:'Medicina estética. Nicho de ticket alto. Ativo digitalmente.', status:'nao-contatado', site:'https://dietadetox1000.blogspot.com', maps:'https://maps.google.com/?cid=8820280970661337207' },
+  { id:7, nicho:'estetica', name:'Royal Face Clínica', phone:'(71) 98433-2665', rating:4.7, reviews:40, addr:'Av. Praia de Itapuã, 805 - Vilas', priority:'P1', website:true, obs:'Franquia com site próprio. Potencial de escalar campanhas.', status:'nao-contatado', site:'https://royalface.com.br/unidade/lauro-de-freitas-ba/', maps:'https://maps.google.com/?cid=5118448392387256726' },
+  { id:8, nicho:'estetica', name:'Prime S Clinic', phone:'(71) 99169-0380', rating:5.0, reviews:11, addr:'Av. Luiz Tarquínio Pontes, 2580 - Buraquinho', priority:'P2', website:false, obs:'5 estrelas. Pequena mas qualidade alta.', status:'nao-contatado', maps:'https://maps.google.com/?cid=15909270210003247780' },
+  { id:9, nicho:'estetica', name:'Clínica Angellis', phone:'(71) 99988-5464', rating:5.0, reviews:5, addr:'Estação Villas Shopping - Av. Priscila Dutra, 389', priority:'P2', website:false, obs:'Nova, 5 estrelas, boa localização no shopping.', status:'nao-contatado', maps:'https://maps.google.com/?cid=7448861896042751287' },
+  { id:10, nicho:'estetica', name:'Revitalle Clinic', phone:'(71) 3024-3935', rating:4.3, reviews:29, addr:'Av. Praia de Itapuã, 381 - Vilas', priority:'P3', website:false, obs:'Reviews mistas. Precisam melhorar presença online.', status:'nao-contatado', maps:'https://maps.google.com/?cid=2402224636865959270' },
+
+  // SAÚDE
+  { id:11, nicho:'saude', name:'Bem Sorriso Implantes', phone:'(71) 3015-5484', rating:5.0, reviews:309, addr:'Av. Praia de Itapuã, 319 - Vilas', priority:'P1', website:true, obs:'309 reviews, 5 estrelas! Tem site clinicabemsorriso.com.br e Instagram @bemsorrisovilas.', status:'nao-contatado', instagram:'https://instagram.com/bemsorrisovilas', site:'https://clinicabemsorriso.com.br/vilas-do-atlantico/', maps:'https://maps.google.com/?cid=5571092489970760103' },
+  { id:12, nicho:'saude', name:'Dentare Clínica Odontológica', phone:'(71) 99212-0622', rating:5.0, reviews:167, addr:'Av. Praia de Itapuã, 1670 - Vilas', priority:'P1', website:true, obs:'Implantes + aparelhos. 5 estrelas. Tem Facebook e site.', status:'nao-contatado', site:'https://www.facebook.com/dentareodonto/', maps:'https://maps.google.com/?cid=14430778771240994664' },
+  { id:13, nicho:'saude', name:'Villas Dental Clinic', phone:'(71) 3369-0414', rating:4.9, reviews:123, addr:'Av. Praia de Itapuã, 408 - Vilas', priority:'P1', website:true, obs:'Tem site próprio villasdental.com.br com tour 360°. Alta tecnologia.', status:'nao-contatado', site:'https://villasdental.com.br/', maps:'https://maps.google.com/?cid=5118448392387256726' },
+  { id:14, nicho:'saude', name:'Jeice Lima Nutricionista', phone:'(71) 98403-0485', rating:5.0, reviews:182, addr:'Av. Luiz Tarquínio Pontes, 2580 - Buraquinho', priority:'P1', website:false, obs:'182 reviews! Forte presença no Instagram com desafios e conteúdo. Excelente para escalar.', status:'nao-contatado', instagram:'https://instagram.com/nutrijeicelima', maps:'https://maps.google.com/?cid=8820280970661337207' },
+  { id:15, nicho:'saude', name:'Michelle Guerra Nutricionista', phone:'(71) 98159-8999', rating:5.0, reviews:15, addr:'R. Praia de Ondina, 50 - Vilas', priority:'P2', website:false, obs:'Excelentes avaliações. Boa para campanhas de captação de pacientes.', status:'nao-contatado', maps:'https://maps.google.com/?cid=5571092489970760103' },
+  { id:16, nicho:'saude', name:'Infinity Odonto Vilas', phone:'(71) 98882-3474', rating:4.9, reviews:29, addr:'Av. Luiz Tarquínio Pontes, 2580 - Vilas', priority:'P2', website:false, obs:'Clareamento dental em destaque nas avaliações.', status:'nao-contatado', maps:'https://maps.google.com/?cid=2179164227317637632' },
+  { id:17, nicho:'saude', name:'Nutricionista Cyntia Câmara', phone:'(71) 99919-4915', rating:5.0, reviews:5, addr:'Av. Praia de Itapuã, 1686 - Vilas', priority:'P2', website:false, obs:'Nutrição integrativa + acupuntura. Ticket diferenciado.', status:'nao-contatado', maps:'https://maps.google.com/?cid=14430778771240994664' },
+
+  // ACADEMIA
+  { id:18, nicho:'academia', name:'Studio Kore - Funcional', phone:'(71) 99152-5662', rating:4.8, reviews:47, addr:'Av. Praia de Itapuã, 1808 - Vilas', priority:'P1', website:true, obs:'Studio premium. Franquia com 87K seguidores no IG nacional. Unidade local @kore.bahia.vilasdoatlantico.', status:'nao-contatado', instagram:'https://instagram.com/kore.bahia.vilasdoatlantico', site:'https://studiokore.com.br/', maps:'https://maps.google.com/?cid=14430778771240994664' },
+  { id:19, nicho:'academia', name:'Academia Vilas Fitness', phone:'(71) 99907-7895', rating:4.7, reviews:180, addr:'R. Praia de Ondina, 50 - Vilas', priority:'P1', website:true, obs:'Academia grande. 180 reviews. Instagram @academiavilasfitness_. Espaço kids = diferencial.', status:'nao-contatado', instagram:'https://instagram.com/academiavilasfitness_', site:'https://www.academiavilasfitness.com/home/', maps:'https://maps.google.com/?cid=5571092489970760103' },
+  { id:20, nicho:'academia', name:'Rede Fluir - Vilas', phone:'(71) 3024-3021', rating:4.8, reviews:82, addr:'Av. Priscila Dutra, S/N - Buraquinho', priority:'P2', website:false, obs:'Fisioterapia + fitness. Ticket recorrente alto.', status:'nao-contatado', maps:'https://maps.google.com/?cid=15909270210003247780' },
+
+  // SALÃO
+  { id:21, nicho:'salao', name:'Villas Coiffeur', phone:'(71) 3508-0796', rating:4.7, reviews:107, addr:'Av. Priscila Dutra, 389 - Buraquinho', priority:'P1', website:false, obs:'107 reviews. Público feminino premium. Presença no Instagram.', status:'nao-contatado', instagram:'https://instagram.com/villascoiffeurcentrodebeleza', maps:'https://maps.google.com/?cid=6316088598018556811' },
+  { id:22, nicho:'salao', name:'Estação de Beleza Vilas', phone:'(71) 3289-4070', rating:4.7, reviews:85, addr:'R. Praia de Pajussara, 348 - Vilas', priority:'P1', website:false, obs:'85 reviews. Tem Instagram ativo @estacaodebelezavilas. Salão completo.', status:'nao-contatado', instagram:'https://instagram.com/estacaodebelezavilas', maps:'https://maps.google.com/?cid=10381152542829611920' },
+  { id:23, nicho:'salao', name:'Palazzo Spazio di Belleza', phone:'(71) 3287-1357', rating:4.5, reviews:141, addr:'Av. Praia de Itapuã, 571 - Vilas', priority:'P2', website:false, obs:'141 reviews. Atendimento VIP conforme avaliações.', status:'nao-contatado', maps:'https://maps.google.com/?cid=18005118390911426139' },
+  { id:24, nicho:'salao', name:'Rosenildes Mendes Cabeleireira', phone:'(71) 3251-9153', rating:4.6, reviews:105, addr:'Av. Praia de Itapuã, 1861 - Vilas', priority:'P2', website:false, obs:'Especialista em loiras. Clientela fiel.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6016212904337810409' },
+  { id:25, nicho:'salao', name:'Lu Castro Studio de Beleza', phone:'(71) 99317-3415', rating:4.7, reviews:48, addr:'Av. Luiz Tarquínio Pontes, 2318 - Vilas', priority:'P2', website:false, obs:'Avaliações mistas. Potencial de melhora com tráfego + reputação.', status:'nao-contatado', maps:'https://maps.google.com/?cid=15909270210003247780' },
+
+  // PET
+  { id:26, nicho:'pet', name:'Veterinary Clinic Vilas do Atlântico', phone:'(71) 3379-0092', rating:4.8, reviews:170, addr:'R. Praia do Mucuripe, 26 - Vilas', priority:'P1', website:false, obs:'170 reviews, 4.8. Nicho pet com ticket recorrente alto.', status:'nao-contatado', maps:'https://maps.google.com/?cid=14430778771240994664' },
+  { id:27, nicho:'pet', name:'Pettep', phone:'(71) 99695-7413', rating:4.8, reviews:50, addr:'Av. Praia de Itapuã, 374 - Vilas', priority:'P1', website:false, obs:'Pet shop + clínica. 4.8 estrelas. 11K seguidores no IG @pettepbahia. Muito ativo.', status:'nao-contatado', instagram:'https://instagram.com/pettepbahia', maps:'https://maps.google.com/?cid=5571092489970760103' },
+  { id:28, nicho:'pet', name:'Pet Vilas', phone:'(71) 99295-0648', rating:4.6, reviews:233, addr:'R. Ana C. B. Dias - Miragem', priority:'P2', website:false, obs:'233 reviews. Volume alto. Reviews mistas — oportunidade de posicionamento.', status:'nao-contatado', maps:'https://maps.google.com/?cid=2402224636865959270' },
+  { id:29, nicho:'pet', name:'Dr. Zoo & Cia Veterinária 24h', phone:'(71) 98796-5529', rating:4.3, reviews:267, addr:'R. Praia de Pajussara, 106 - Vilas', priority:'P2', website:false, obs:'24h. Alto volume mas avaliações variadas.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6016212904337810409' },
+
+  // IMÓVEIS
+  { id:30, nicho:'imoveis', name:'Silvia Porto Imóveis', phone:'(71) 99675-8989', rating:4.8, reviews:24, addr:'Av. Praia de Itapuã, 48 - Vilas', priority:'P1', website:false, obs:'Corretora individual. Tráfego pago para captação de leads imob.', status:'nao-contatado', maps:'https://maps.google.com/?cid=14430778771240994664' },
+  { id:31, nicho:'imoveis', name:'Linnda Imobiliária', phone:'(71) 99969-3434', rating:4.3, reviews:15, addr:'Av. Praia de Itapuã, 1067 - Vilas', priority:'P2', website:false, obs:'Imobiliária local. Ticket alto por transação.', status:'nao-contatado', maps:'https://maps.google.com/?cid=5571092489970760103' },
+  { id:32, nicho:'imoveis', name:'Tadeu Carvalho Corretor', phone:'(71) 99185-1348', rating:4.0, reviews:4, addr:'R. Praia de Itapema - Vilas', priority:'P2', website:false, obs:'Corretor individual. Pode investir em leads qualificados.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6016212904337810409' },
+
+  // EDUCAÇÃO
+  { id:33, nicho:'educacao', name:'Badermann Escola de Música', phone:'(71) 99272-9658', rating:5.0, reviews:202, addr:'Shopping Villas Boulevard - Av. Praia de Itapuã, 1137', priority:'P1', website:false, obs:'5 estrelas, 202 reviews! Forte Instagram @badermann.musica.', status:'nao-contatado', instagram:'https://instagram.com/badermann.musica', maps:'https://maps.google.com/?cid=7448861896042751287' },
+  { id:34, nicho:'educacao', name:'Kidsland Creche Escola', phone:'(71) 99608-1136', rating:5.0, reviews:64, addr:'R. Maria dos Réis Silva, 312 - Miragem', priority:'P1', website:false, obs:'5 estrelas. Escola infantil premium. 5.3K seguidores @kidslandvilas. Público de alta renda.', status:'nao-contatado', instagram:'https://instagram.com/kidslandvilas', maps:'https://maps.google.com/?cid=14430778771240994664' },
+  { id:35, nicho:'educacao', name:'Vilas Cursos (Number One)', phone:'—', rating:4.8, reviews:31, addr:'Av. Praia de Pajussara, 294 - Vilas', priority:'P2', website:false, obs:'Franquia de inglês. Anúncios para matrículas.', status:'nao-contatado', maps:'https://maps.google.com/?cid=5571092489970760103' },
+  { id:36, nicho:'educacao', name:'Escola Lápis Vilas', phone:'(71) 98430-6639', rating:4.8, reviews:19, addr:'R. Maria dos Réis Silva, 152 - Miragem', priority:'P2', website:false, obs:'Berçário e Fundamental. Boa estrutura pedagógica.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6316088598018556811' },
+
+  // MODA
+  { id:37, nicho:'moda', name:'MSTORE BA', phone:'(71) 99607-1116', rating:5.0, reviews:15, addr:'Av. Praia de Itapuã, 7 - Vilas', priority:'P1', website:false, obs:'Moda masculina premium. 5 estrelas. Instagram ativo.', status:'nao-contatado', maps:'https://maps.google.com/?cid=2179164227317637632' },
+  { id:38, nicho:'moda', name:'Loja Oyá Let\'sGo', phone:'(71) 99677-9492', rating:4.9, reviews:11, addr:'Av. Praia de Itapuã, 935 - Vilas', priority:'P1', website:false, obs:'Moda feminina. 4.9 estrelas. Peças exclusivas.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6016212904337810409' },
+  { id:39, nicho:'moda', name:'Vivi Moda Íntima', phone:'(71) 98349-6325', rating:4.8, reviews:13, addr:'Av. Praia de Itapuã, 248 - Vilas', priority:'P2', website:false, obs:'Lingerie. Cliente fiel conforme reviews.', status:'nao-contatado', maps:'https://maps.google.com/?cid=18005118390911426139' },
+
+  // JURÍDICO
+  { id:40, nicho:'juridico', name:'Alvarez & Borba Advocacia', phone:'(71) 99333-7181', rating:5.0, reviews:39, addr:'Empresarial Atlântico - R. Itagi - Vilas', priority:'P1', website:false, obs:'Especialidade digital: recuperação de contas Instagram/TikTok. Público nichado.', status:'nao-contatado', maps:'https://maps.google.com/?cid=5118448392387256726' },
+  { id:41, nicho:'juridico', name:'Tatiane Costa Advocacia', phone:'(71) 99621-4242', rating:5.0, reviews:51, addr:'R. Praia de Pajussara, 294 - Vilas', priority:'P1', website:false, obs:'51 reviews, 5 estrelas. Advocacia consumerista. Tráfego para captação.', status:'nao-contatado', maps:'https://maps.google.com/?cid=14430778771240994664' },
+  { id:42, nicho:'juridico', name:'Carvalho Advocacia', phone:'(71) 99184-7649', rating:5.0, reviews:11, addr:'Estr. Min. Antônio Carlos Magalhães, 447 - Buraquinho', priority:'P2', website:false, obs:'Família e patrimonial. Bom ticket médio.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6316088598018556811' },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let leads = JSON.parse(localStorage.getItem('prospec_leads') || 'null') || 
+  allLeads.map(l => ({...l, customObs: '', customStatus: l.status, customPriority: l.priority}));
+let selectedId = null;
+let currentFilter = 'todos';
+let searchQuery = '';
+
+function saveLeads() {
+  localStorage.setItem('prospec_leads', JSON.stringify(leads));
+}
+function getLead(id) { return leads.find(l => l.id === id); }
+
+// ============================================================
+// SCRIPTS
+// ============================================================
+const scripts = {
+  restaurante: (name) => `Oi! Tudo bem? Encontrei o ${name} aqui perto de mim, em Vilas do Atlântico, e vi que vocês têm ótimas avaliações no Google. 🔥
+
+Sou gestor de tráfego e trabalho com anúncios no Meta e Google para restaurantes da região. Vi que dá pra aumentar bastante o movimento de vocês com campanhas bem segmentadas.
+
+Posso te mostrar como funciona sem compromisso? Quando seria um bom horário pra conversar?`,
+  estetica: (name) => `Oi! Vi o ${name} no Google Maps e fiquei impressionado com as avaliações — parabéns pelo serviço! 🎉
+
+Trabalho com tráfego pago para clínicas estéticas aqui em Lauro de Freitas. Com anúncios no Meta/Instagram, muitas clínicas que atendo conseguem lotar a agenda em poucos dias.
+
+Posso fazer uma análise gratuita do potencial de vocês? É rápido e sem compromisso. 💬`,
+  saude: (name) => `Oi! Encontrei o ${name} no Google Maps e fiquei impressionado com o número de avaliações positivas!
+
+Sou especialista em tráfego pago para clínicas e profissionais de saúde aqui na região de Vilas do Atlântico. Trabalho com anúncios no Google Ads e Meta para captação de novos pacientes.
+
+Você teria interesse em conhecer como funciona? Posso mostrar resultados de outros clientes da área. 📊`,
+  academia: (name) => `Oi! Tudo bem? Vi o ${name} no Google com ótimas avaliações e queria bater um papo rápido.
+
+Trabalho com tráfego pago para academias e studios de fitness. Campanhas bem feitas conseguem atrair novos alunos de forma constante, principalmente no período de mudanças de hábito.
+
+Posso fazer uma análise gratuita do potencial de vocês? Tem 10 minutinhos pra conversar? 💪`,
+  salao: (name) => `Oi! Vi o ${name} aqui em Vilas do Atlântico com ótimas avaliações. Parabéns pelo trabalho!
+
+Sou gestor de tráfego especializado em salões de beleza. Com anúncios no Instagram e Facebook, consigo atrair clientes novos de forma consistente pra quem ainda não apareceu nas redes.
+
+Você teria interesse em conhecer como seria pra vocês? Faço uma análise gratuita sem compromisso. ✂️`,
+  pet: (name) => `Oi! Vi o ${name} no Google Maps com ótimas avaliações! 🐾
+
+Trabalho com tráfego pago para pet shops e clínicas veterinárias aqui em Lauro de Freitas. É um nicho que responde muito bem a anúncios no Facebook/Instagram, especialmente para serviços de banho, tosa e consultas.
+
+Posso te mostrar como funciona? É rápido e sem compromisso. 😊`,
+  imoveis: (name) => `Oi! Tudo bem? Encontrei o ${name} no Google Maps e queria conversar sobre uma oportunidade.
+
+Trabalho com tráfego pago para corretores e imobiliárias. Com Google Ads e Meta, consigo gerar leads qualificados de pessoas buscando imóveis na região de Vilas do Atlântico.
+
+Você teria interesse em conhecer? Posso mostrar como funciona em 15 minutos. 🏠`,
+  educacao: (name) => `Oi! Vi o ${name} no Google Maps — nota incrível e ótimas avaliações! 🎓
+
+Trabalho com tráfego pago para escolas e cursos. No período de matrículas (jan, fev, jul/ago), campanhas bem feitas fazem uma diferença enorme na captação de alunos.
+
+Posso fazer uma análise gratuita do potencial de vocês? Quando seria um bom momento pra conversar?`,
+  moda: (name) => `Oi! Vi o ${name} aqui em Vilas do Atlântico com ótimas avaliações! 👗
+
+Trabalho com tráfego pago para lojas de moda. Com anúncios no Instagram e Facebook, muitas lojas da região conseguem aumentar bastante o movimento presencial e as vendas.
+
+Você teria interesse em saber como funciona? Posso fazer uma análise rápida e sem compromisso. 💬`,
+  juridico: (name) => `Oi! Vi o ${name} no Google com excelente reputação — parabéns pelo trabalho!
+
+Trabalho com tráfego pago para escritórios de advocacia. Com Google Ads bem configurado, é possível aparecer para pessoas que estão buscando exatamente o seu serviço na região.
+
+Posso apresentar como funciona? É rápido, sem compromisso, e já trabalhei com outros profissionais da área. ⚖️`,
+};
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderStars(rating) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= Math.floor(rating)) html += '<span class="star full">★</span>';
+    else if (i === Math.ceil(rating) && rating % 1 >= 0.5) html += '<span class="star half">★</span>';
+    else html += '<span class="star empty">☆</span>';
+  }
+  return html;
+}
+
+function renderPriority(p) {
+  const map = { P1: ['p1','🔥 Alta'], P2: ['p2','⚡ Média'], P3: ['p3','❄️ Baixa'] };
+  return `<span class="priority ${map[p][0]}">${map[p][1]}</span>`;
+}
+
+function renderStatus(s) {
+  const map = {
+    'nao-contatado': ['s-nao-contatado','Não contatado'],
+    'contatado': ['s-contatado','Contatado'],
+    'interesse': ['s-interesse','Demonstrou interesse'],
+    'reuniao': ['s-reuniao','Reunião agendada'],
+    'fechado': ['s-fechado','Fechado ✓'],
+    'sem-interesse': ['s-sem-interesse','Sem interesse'],
+  };
+  const d = map[s] || map['nao-contatado'];
+  return `<span class="status ${d[0]}" title="Clique para editar">${d[1]}</span>`;
+}
+
+function getVisibleLeads() {
+  return leads.filter(l => {
+    const matchNicho = currentFilter === 'todos' || l.nicho === currentFilter;
+    const matchSearch = !searchQuery || 
+      l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      l.phone.includes(searchQuery);
+    return matchNicho && matchSearch;
+  });
+}
+
+function renderTable() {
+  const section = document.getElementById('tableSection');
+  const visible = getVisibleLeads();
+
+  // Group by nicho
+  const grouped = {};
+  nichos.forEach(n => {
+    const gs = visible.filter(l => l.nicho === n.id);
+    if (gs.length) grouped[n.id] = { meta: n, leads: gs };
+  });
+
+  if (!Object.keys(grouped).length) {
+    section.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted)">Nenhum lead encontrado.</div>`;
+    updateStats();
+    return;
+  }
+
+  let html = '';
+  for (const nid in grouped) {
+    const g = grouped[nid];
+    html += `
+      <div class="nicho-group" id="ng-${nid}">
+        <div class="nicho-header" onclick="toggleNicho('${nid}')">
+          <span class="nicho-icon">${g.meta.icon}</span>
+          <span class="nicho-name" style="color:${g.meta.color}">${g.meta.name}</span>
+          <span class="nicho-count">${g.leads.length} leads</span>
+          <span class="nicho-chevron" id="chev-${nid}">▼</span>
+
+        </div>
+        <div class="nicho-body" id="nb-${nid}">
+          <table>
+            <thead>
+              <tr>
+                <th>NEGÓCIO</th>
+                <th>TELEFONE</th>
+                <th>AVALIAÇÃO</th>
+                <th>PRIORIDADE</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+    g.leads.forEach((l, rowIdx) => {
+      const sel = selectedId === l.id ? ' selected' : '';
+      const tblLinks = [];
+      if (l.instagram) tblLinks.push(`<a href="${l.instagram}" target="_blank" onclick="event.stopPropagation()" class="link-chip ig" style="font-size:9px;padding:1px 6px">📷 IG</a>`);
+      if (l.site) tblLinks.push(`<a href="${l.site}" target="_blank" onclick="event.stopPropagation()" class="link-chip site" style="font-size:9px;padding:1px 6px">🌐</a>`);
+      if (l.maps) tblLinks.push(`<a href="${l.maps}" target="_blank" onclick="event.stopPropagation()" class="link-chip maps" style="font-size:9px;padding:1px 6px">📍</a>`);
+      const wppNum = l.phone.replace(/\D/g,'');
+      const wppLink = wppNum && wppNum.length >= 10 ? `<a href="https://wa.me/55${wppNum}" target="_blank" onclick="event.stopPropagation()" class="wpp-chip" title="Abrir WhatsApp">💬 WPP</a>` : '';
+      html += `
+        <tr class="lead-row${sel}" id="row-${l.id}" onclick="selectLead(${l.id})" style="animation-delay:${rowIdx * 0.03}s">
+          <td>
+            <div class="lead-name">${l.name}</div>
+            ${tblLinks.length ? `<div class="table-links">${tblLinks.join('')}</div>` : ''}
+          </td>
+          <td style="white-space:nowrap"><a class="tel-link" href="tel:${l.phone}">${l.phone}</a>${wppLink}</td>
+          <td>
+            <div class="rating-row">
+              <span class="stars">${renderStars(l.rating)}</span>
+              <span class="stars-count">${l.rating} (${l.reviews.toLocaleString('pt-BR')})</span>
+            </div>
+          </td>
+          <td>${renderPriority(l.customPriority || l.priority)}</td>
+          <td>${renderStatus(l.customStatus || l.status)}</td>
+        </tr>
+      `;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+
+  section.innerHTML = html;
+  updateStats();
+}
+
+function toggleNicho(nid) {
+  const body = document.getElementById('nb-'+nid);
+  const chev = document.getElementById('chev-'+nid);
+  body.classList.toggle('collapsed');
+  chev.classList.toggle('collapsed', body.classList.contains('collapsed'));
+}
+
+function updateStats() {
+  const visible = getVisibleLeads();
+  const total = visible.length;
+  const p1 = visible.filter(l => (l.customPriority||l.priority) === 'P1').length;
+  const contatados = visible.filter(l => ['contatado','interesse','reuniao'].includes(l.customStatus||l.status)).length;
+  const fechados = visible.filter(l => (l.customStatus||l.status) === 'fechado').length;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-p1').textContent = p1;
+  document.getElementById('stat-contatados').textContent = contatados;
+  document.getElementById('stat-fechados').textContent = fechados;
+
+  // progress fills (relative to total)
+  const pct = (v) => total ? Math.round(v / total * 100) : 0;
+  requestAnimationFrame(() => {
+    document.getElementById('prog-total').style.width = '100%';
+    document.getElementById('prog-p1').style.width = pct(p1) + '%';
+    document.getElementById('prog-contatados').style.width = pct(contatados) + '%';
+    document.getElementById('prog-fechados').style.width = pct(fechados) + '%';
+  });
+
+  renderPipeline(visible);
+}
+
+function renderPipeline(visible) {
+  const stages = [
+    { key: 'nao-contatado', label: 'Não contatado', color: '#6b7280' },
+    { key: 'contatado',     label: 'Contatado',      color: '#7c6aff' },
+    { key: 'interesse',     label: 'Interesse',       color: '#fbbf24' },
+    { key: 'reuniao',       label: 'Reunião',         color: '#ff6b35' },
+    { key: 'fechado',       label: 'Fechado',         color: '#00e5a0' },
+  ];
+  const total = visible.length || 1;
+  const track = document.getElementById('pipelineTrack');
+  const legend = document.getElementById('pipelineLegend');
+  if (!track) return;
+
+  track.innerHTML = stages.map(s => {
+    const count = visible.filter(l => (l.customStatus||l.status) === s.key).length;
+    const pct = Math.max(count / total * 100, count > 0 ? 1 : 0);
+    return `<div class="pipeline-seg" style="width:${pct}%;background:${s.color}" title="${s.label}: ${count}"></div>`;
+  }).join('');
+
+  legend.innerHTML = stages.map(s => {
+    const count = visible.filter(l => (l.customStatus||l.status) === s.key).length;
+    return `<div class="pipeline-item"><span class="pipeline-dot" style="background:${s.color}"></span>${s.label} <strong>${count}</strong></div>`;
+  }).join('');
+}
+
+function animateCounters(ids) {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const target = parseInt(el.textContent) || 0;
+    let cur = 0;
+    const step = Math.max(1, Math.ceil(target / 22));
+    const timer = setInterval(() => {
+      cur = Math.min(cur + step, target);
+      el.textContent = cur;
+      if (cur >= target) clearInterval(timer);
+    }, 28);
+  });
+}
+
+// ============================================================
+// DETAIL PANEL
+// ============================================================
+function selectLead(id) {
+  selectedId = id;
+  document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
+  const row = document.getElementById('row-'+id);
+  if (row) row.classList.add('selected');
+  renderDetail();
+}
+
+function renderDetail() {
+  const lead = getLead(selectedId);
+  if (!lead) return;
+
+  document.getElementById('detailEmpty').style.display = 'none';
+  const content = document.getElementById('detailContent');
+  content.style.display = 'flex';
+  content.classList.add('visible');
+
+  const nicho = nichos.find(n => n.id === lead.nicho);
+  const script = (scripts[lead.nicho] || scripts.restaurante)(lead.name);
+
+  const statusOpts = [
+    ['nao-contatado','Não contatado'],
+    ['contatado','Contatado'],
+    ['interesse','Com interesse'],
+    ['reuniao','Reunião agendada'],
+    ['fechado','Fechado ✓'],
+    ['sem-interesse','Sem interesse'],
+  ];
+  const priorityOpts = [['P1','🔥 Alta','p1-opt'],['P2','⚡ Média','p2-opt'],['P3','❄️ Baixa','p3-opt']];
+
+  const curStatus = lead.customStatus || lead.status;
+  const curPriority = lead.customPriority || lead.priority;
+
+  const linksArr = [];
+  if (lead.instagram) linksArr.push(`<a href="${lead.instagram}" target="_blank" class="link-chip ig">📷 Instagram</a>`);
+  if (lead.site) linksArr.push(`<a href="${lead.site}" target="_blank" class="link-chip site">🌐 Site</a>`);
+  if (lead.maps) linksArr.push(`<a href="${lead.maps}" target="_blank" class="link-chip maps">📍 Maps</a>`);
+  const linksHtml = linksArr.length ? `<div class="links-row">${linksArr.join('')}</div>` : '<span style="color:var(--muted);font-size:11px">—</span>';
+
+  content.innerHTML = `
+    <div class="detail-top">
+      <div class="detail-nicho-tag">${nicho.icon} ${nicho.name}</div>
+      <div class="detail-name">${lead.name}</div>
+      <div class="detail-addr">${lead.addr}</div>
+      <div class="detail-row" style="margin-top:8px">
+        <span class="detail-label">Telefone</span>
+        <a class="tel-link" href="tel:${lead.phone}">${lead.phone}</a>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Avaliação</span>
+        <span class="stars" style="font-size:12px">${renderStars(lead.rating)}</span>
+        <span class="stars-count">${lead.rating} · ${lead.reviews.toLocaleString('pt-BR')} reviews</span>
+      </div>
+      <div class="detail-row" style="align-items:flex-start;gap:6px">
+        <span class="detail-label" style="padding-top:3px">Links</span>
+        ${linksHtml}
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title"><span>📌 Observação do Lead</span></div>
+      <div style="color:var(--muted);font-size:11px;line-height:1.7;padding:6px 0">${lead.obs}</div>
+    </div>
+
+    <div>
+      <div class="section-title"><span>🔥 Prioridade</span></div>
+      <div class="priority-grid">
+        ${priorityOpts.map(([v,l,cls]) => `
+          <button class="priority-opt ${cls}${curPriority===v?' active':''}" onclick="setPriority(${lead.id},'${v}',this)">${l}</button>
+        `).join('')}
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title"><span>📊 Status do Contato</span></div>
+      <div class="status-grid">
+        ${statusOpts.map(([v,l]) => `
+          <button class="status-opt${curStatus===v?' active':''}" data-v="${v}" onclick="setStatus(${lead.id},'${v}',this)">${l}</button>
+        `).join('')}
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title"><span>📝 Suas Anotações</span></div>
+      <textarea class="notes-field" id="notes-${lead.id}" placeholder="Observações, respostas, próximas ações...">${lead.customObs || ''}</textarea>
+    </div>
+
+    <div>
+      <div class="section-title"><span>💬 Script de Abordagem (WhatsApp)</span></div>
+      <div class="script-box" id="script-${lead.id}">${script}<button class="copy-btn" onclick="copyScript(${lead.id})">Copiar</button></div>
+    </div>
+
+    <button class="save-btn" onclick="saveDetail(${lead.id})">✓ Salvar Alterações</button>
+  `;
+}
+
+function setPriority(id, val, btn) {
+  btn.closest('.priority-grid').querySelectorAll('.priority-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const lead = getLead(id);
+  if (lead) lead.customPriority = val;
+}
+
+function setStatus(id, val, btn) {
+  btn.closest('.status-grid').querySelectorAll('.status-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const lead = getLead(id);
+  if (lead) lead.customStatus = val;
+}
+
+function saveDetail(id) {
+  const lead = getLead(id);
+  if (!lead) return;
+  const notes = document.getElementById('notes-'+id);
+  if (notes) lead.customObs = notes.value;
+
+  const btn = document.querySelector('.save-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span> Salvando...';
+  }
+
+  setTimeout(() => {
+    saveLeads();
+    renderTable();
+    setTimeout(() => {
+      document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
+      const row = document.getElementById('row-'+id);
+      if (row) row.classList.add('selected');
+    }, 10);
+    if (btn) {
+      btn.innerHTML = '✓ Salvo!';
+      setTimeout(() => {
+        btn.innerHTML = '✓ Salvar Alterações';
+        btn.disabled = false;
+      }, 1200);
+    }
+    showToast();
+  }, 320);
+}
+
+function copyScript(id) {
+  const el = document.getElementById('script-'+id);
+  const text = el.textContent.replace('Copiar','').trim();
+  navigator.clipboard.writeText(text).then(() => showToast('Script copiado!'));
+}
+
+function showToast(msg = 'Salvo com sucesso') {
+  const t = document.getElementById('toast');
+  t.textContent = '✓ ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============================================================
+// FILTERS
+// ============================================================
+function filterLeads(q) {
+  searchQuery = q;
+  const clearBtn = document.getElementById('searchClear');
+  if (clearBtn) clearBtn.classList.toggle('show', q.length > 0);
+  renderTable();
+}
+
+function clearSearch() {
+  searchQuery = '';
+  const inp = document.getElementById('searchInput');
+  if (inp) inp.value = '';
+  const clearBtn = document.getElementById('searchClear');
+  if (clearBtn) clearBtn.classList.remove('show');
+  renderTable();
+}
+
+function filterNicho(nicho, btn) {
+  currentFilter = nicho;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+// ============================================================
+// EXPORT CSV
+// ============================================================
+function exportCSV() {
+  const visible = getVisibleLeads();
+  const cols = ['ID','Nicho','Nome','Telefone','Avaliação','Reviews','Prioridade','Status','Obs Lead','Anotações'];
+  const rows = visible.map(l => [
+    l.id,
+    nichos.find(n=>n.id===l.nicho)?.name || l.nicho,
+    l.name,
+    l.phone,
+    l.rating,
+    l.reviews,
+    l.customPriority || l.priority,
+    l.customStatus || l.status,
+    l.obs,
+    l.customObs || ''
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`));
+
+  const csv = [cols.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `prospecao_vilas_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && selectedId) {
+    selectedId = null;
+    document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
+    document.getElementById('detailEmpty').style.display = '';
+    const content = document.getElementById('detailContent');
+    content.classList.remove('visible');
+    content.style.display = 'none';
+  }
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    if (selectedId) saveDetail(selectedId);
+  }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+renderTable();
+// animate stat counters on first load
+setTimeout(() => animateCounters(['stat-total','stat-p1','stat-contatados','stat-fechados']), 100);
+</script>
+</body>
+</html>
