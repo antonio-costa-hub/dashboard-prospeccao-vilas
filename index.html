@@ -148,7 +148,7 @@
   /* MAIN LAYOUT */
   .main {
     display: grid;
-    grid-template-columns: 1fr 360px;
+    grid-template-columns: 190px 1fr 360px;
     height: calc(100vh - 178px);
   }
 
@@ -543,7 +543,7 @@
 
   /* Grid principal: painel encolhe com a tela (mín 260px) */
   .main {
-    grid-template-columns: 1fr clamp(260px, 28vw, 380px);
+    grid-template-columns: 190px 1fr clamp(260px, 28vw, 380px);
     height: calc(100dvh - var(--chrome-h, 175px));
   }
 
@@ -586,7 +586,8 @@
 
   /* Drawer ativo */
   body.drawer-mode .main {
-    display: block;
+    display: flex;
+    flex-direction: column;
     height: auto;
   }
   body.drawer-mode .table-section {
@@ -917,6 +918,107 @@
     box-shadow: 0 4px 24px rgba(0,229,160,0.28);
     font-size: 12px !important;
   }
+
+  /* ── STAGE SIDEBAR ── */
+  .stage-sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 0 20px;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+  .stage-sidebar-title {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    padding: 0 14px 10px;
+    flex-shrink: 0;
+  }
+  .stage-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 6px 14px;
+  }
+  .stage-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .stage-item:hover {
+    background: rgba(255,255,255,0.03);
+    color: var(--text);
+  }
+  .stage-item.active {
+    background: rgba(255,255,255,0.04);
+    border-left-color: var(--stage-color, var(--accent));
+    color: var(--stage-color, var(--accent));
+  }
+  .stage-icon { font-size: 13px; flex-shrink: 0; }
+  .stage-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; }
+  .stage-count {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 9px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+    min-width: 18px;
+    text-align: center;
+  }
+  .stage-item.active .stage-count {
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+  }
+
+  /* Stage sidebar em modo drawer: strip horizontal */
+  body.drawer-mode .stage-sidebar {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 10px;
+    gap: 4px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  body.drawer-mode .stage-sidebar::-webkit-scrollbar { display: none; }
+  body.drawer-mode .stage-sidebar-title,
+  body.drawer-mode .stage-divider { display: none; }
+  body.drawer-mode .stage-item {
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 10px;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 8px;
+    flex-shrink: 0;
+    min-width: 64px;
+    align-items: center;
+    white-space: nowrap;
+    font-size: 10px;
+  }
+  body.drawer-mode .stage-item.active {
+    border-bottom-color: var(--stage-color, var(--accent));
+    border-left-color: transparent;
+  }
+  body.drawer-mode .stage-label { font-size: 9px; }
+  body.drawer-mode .stage-icon { font-size: 15px; }
+  body.drawer-mode .stage-count { font-size: 9px; padding: 0 5px; }
 </style>
 </head>
 <body>
@@ -978,6 +1080,7 @@
 </div>
 
 <div class="main">
+  <div class="stage-sidebar" id="stageSidebar"></div>
   <div class="table-section" id="tableSection"></div>
   <div class="detail-panel" id="detailPanel">
     <button class="mobile-close-btn" onclick="closeMobilePanel()">✕ Fechar</button>
@@ -1081,6 +1184,7 @@ let leads = JSON.parse(localStorage.getItem('prospec_leads') || 'null') ||
 let selectedId = null;
 let currentFilter = 'todos';
 let searchQuery = '';
+let currentStage = 'todos';
 
 function saveLeads() {
   localStorage.setItem('prospec_leads', JSON.stringify(leads));
@@ -1177,10 +1281,11 @@ function renderStatus(s) {
 function getVisibleLeads() {
   return leads.filter(l => {
     const matchNicho = currentFilter === 'todos' || l.nicho === currentFilter;
-    const matchSearch = !searchQuery || 
+    const matchSearch = !searchQuery ||
       l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       l.phone.includes(searchQuery);
-    return matchNicho && matchSearch;
+    const matchStage = currentStage === 'todos' || (l.customStatus || l.status) === currentStage;
+    return matchNicho && matchSearch && matchStage;
   });
 }
 
@@ -1288,6 +1393,7 @@ function updateStats() {
   });
 
   renderPipeline(visible);
+  renderStageSidebar();
 }
 
 function renderPipeline(visible) {
@@ -1328,6 +1434,53 @@ function animateCounters(ids) {
       if (cur >= target) clearInterval(timer);
     }, 28);
   });
+}
+
+// ============================================================
+// STAGE SIDEBAR
+// ============================================================
+const STAGE_LIST = [
+  { key: 'todos',         label: 'Todos os Leads',   icon: '📁', color: 'var(--text)' },
+  { key: 'nao-contatado', label: 'Não contatado',    icon: '📭', color: '#6b7280', dividerBefore: true },
+  { key: 'contatado',     label: 'Contatado',         icon: '📬', color: '#7c6aff' },
+  { key: 'interesse',     label: 'Interesse',          icon: '⭐', color: '#fbbf24' },
+  { key: 'reuniao',       label: 'Reunião agendada',  icon: '📅', color: '#ff6b35' },
+  { key: 'fechado',       label: 'Fechado',            icon: '✅', color: '#00e5a0' },
+  { key: 'sem-interesse', label: 'Sem interesse',      icon: '🚫', color: '#ef4444' },
+];
+
+function renderStageSidebar() {
+  const sidebar = document.getElementById('stageSidebar');
+  if (!sidebar) return;
+
+  // Count against nicho+search but NOT stage (so all stage counts are visible)
+  const base = leads.filter(l => {
+    const matchNicho = currentFilter === 'todos' || l.nicho === currentFilter;
+    const matchSearch = !searchQuery ||
+      l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      l.phone.includes(searchQuery);
+    return matchNicho && matchSearch;
+  });
+
+  sidebar.innerHTML = `<div class="stage-sidebar-title">Etapas</div>` +
+    STAGE_LIST.map(s => {
+      const count = s.key === 'todos'
+        ? base.length
+        : base.filter(l => (l.customStatus || l.status) === s.key).length;
+      const active = currentStage === s.key ? ' active' : '';
+      const divider = s.dividerBefore ? '<div class="stage-divider"></div>' : '';
+      return `${divider}<div class="stage-item${active}" onclick="filterStage('${s.key}')" style="--stage-color:${s.color}">
+        <span class="stage-icon">${s.icon}</span>
+        <span class="stage-label">${s.label}</span>
+        <span class="stage-count">${count}</span>
+      </div>`;
+    }).join('');
+}
+
+function filterStage(stage) {
+  currentStage = stage;
+  selectedId = null;
+  renderTable();
 }
 
 // ============================================================
@@ -1471,7 +1624,8 @@ function saveDetail(id) {
         btn.disabled = false;
       }, 1200);
     }
-    showToast();
+    const stageInfo = STAGE_LIST.find(s => s.key === (lead.customStatus || lead.status));
+    showToast(stageInfo ? `${stageInfo.icon} Movido para: ${stageInfo.label}` : 'Salvo com sucesso');
   }, 320);
 }
 
@@ -1481,11 +1635,11 @@ function copyScript(id) {
   navigator.clipboard.writeText(text).then(() => showToast('Script copiado!'));
 }
 
-function showToast(msg = 'Salvo com sucesso') {
+function showToast(msg = '✓ Salvo com sucesso') {
   const t = document.getElementById('toast');
-  t.textContent = '✓ ' + msg;
+  t.textContent = msg.startsWith('✓') || msg.includes('→') ? msg : '✓ ' + msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
+  setTimeout(() => t.classList.remove('show'), 2200);
 }
 
 // ============================================================
@@ -1558,7 +1712,8 @@ function syncLayout() {
   const chrome = document.querySelector('.header')?.offsetHeight +
                  document.querySelector('.stats-bar')?.offsetHeight +
                  (drawer ? 0 : document.querySelector('.pipeline-bar')?.offsetHeight || 0) +
-                 document.querySelector('.toolbar')?.offsetHeight || 175;
+                 document.querySelector('.toolbar')?.offsetHeight +
+                 (drawer ? document.querySelector('.stage-sidebar')?.offsetHeight || 0 : 0) || 175;
   document.documentElement.style.setProperty('--chrome-h', chrome + 'px');
 }
 
