@@ -509,9 +509,138 @@
   }
   .saved-toast.show { opacity: 1; transform: translateY(0); }
 
+  /* ══════════════════════════════════════════
+     MOBILE — até 768px
+  ══════════════════════════════════════════ */
   @media (max-width: 768px) {
-    .main { grid-template-columns: 1fr; }
-    .detail-panel { display: none; }
+
+    /* Header compacto */
+    .header { padding: 12px 16px; gap: 10px; }
+    .header-title { font-size: 14px; }
+    .header-meta { display: none; }
+
+    /* Stats em 2×2 */
+    .stats-bar { flex-wrap: wrap; }
+    .stat { flex: 1 1 50%; min-width: 0; padding: 12px 14px; }
+    .stat-num { font-size: 18px; }
+
+    /* Pipeline oculto (muito pequeno pra mobile) */
+    .pipeline-bar { display: none; }
+
+    /* Toolbar em coluna */
+    .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 10px 12px;
+      gap: 8px;
+    }
+    .search-wrapper { width: 100%; }
+    .search-box { width: 100%; }
+    .filter-pills { gap: 6px; }
+    .filter-btn { font-size: 10px; padding: 6px 10px; white-space: nowrap; }
+    .export-btn { width: 100%; padding: 9px; text-align: center; }
+
+    /* Layout: coluna única, painel como drawer */
+    .main {
+      display: block;
+      height: auto;
+      min-height: calc(100vh - 200px);
+    }
+
+    /* Tabela scroll horizontal */
+    .table-section {
+      overflow-x: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+    table { min-width: 540px; }
+    th, td { padding: 8px 10px; font-size: 10px; }
+    .lead-name { font-size: 11px; }
+    .stars { font-size: 10px; }
+    .stars-count { display: none; }
+    .wpp-chip { display: none; }
+    .table-links { display: none; }
+
+    /* Painel de detalhe como sheet na parte inferior */
+    .detail-panel {
+      display: flex !important;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 70vh;
+      background: var(--surface);
+      border-top: 2px solid var(--border);
+      border-radius: 18px 18px 0 0;
+      z-index: 200;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+      flex-direction: column;
+    }
+    .detail-panel.mobile-open {
+      transform: translateY(0);
+    }
+
+    /* Handle drag indicator */
+    .detail-panel::before {
+      content: '';
+      display: block;
+      width: 36px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 10px auto 0;
+      flex-shrink: 0;
+    }
+
+    /* Botão fechar */
+    .mobile-close-btn {
+      display: flex !important;
+    }
+
+    .detail-content {
+      padding: 14px 16px;
+      gap: 14px;
+    }
+    .detail-name { font-size: 14px; }
+    .detail-addr { font-size: 10px; }
+
+    /* Overlay escuro */
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 199;
+    }
+    .mobile-overlay.show { display: block; }
+
+    /* Toast acima do painel */
+    .saved-toast { bottom: 72vh; }
+  }
+
+  /* ══════════════════════════════════════════
+     TABLET — 769px a 1024px
+  ══════════════════════════════════════════ */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .main { grid-template-columns: 1fr 300px; }
+    .pipeline-legend { display: none; }
+    .header-title { font-size: 15px; }
+    .stars-count { display: none; }
+  }
+
+  /* Botão fechar — só aparece no mobile */
+  .mobile-close-btn {
+    display: none;
+    position: absolute;
+    top: 18px; right: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    z-index: 10;
   }
 
   /* ── HEADER GRADIENT BORDER ── */
@@ -861,6 +990,7 @@
 <div class="main">
   <div class="table-section" id="tableSection"></div>
   <div class="detail-panel" id="detailPanel">
+    <button class="mobile-close-btn" onclick="closeMobilePanel()">✕ Fechar</button>
     <div class="detail-empty" id="detailEmpty">
       <div class="detail-empty-icon">←</div>
       <div class="detail-empty-text">Selecione um lead para editar</div>
@@ -868,6 +998,7 @@
     <div class="detail-content" id="detailContent"></div>
   </div>
 </div>
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobilePanel()"></div>
 
 <div class="saved-toast" id="toast">✓ Salvo com sucesso</div>
 
@@ -1218,6 +1349,7 @@ function selectLead(id) {
   const row = document.getElementById('row-'+id);
   if (row) row.classList.add('selected');
   renderDetail();
+  if (isMobile()) openMobilePanel();
 }
 
 function renderDetail() {
@@ -1420,10 +1552,34 @@ function exportCSV() {
 }
 
 // ============================================================
+// MOBILE DRAWER
+// ============================================================
+function isMobile() { return window.innerWidth <= 768; }
+
+function openMobilePanel() {
+  document.getElementById('detailPanel').classList.add('mobile-open');
+  document.getElementById('mobileOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobilePanel() {
+  selectedId = null;
+  document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
+  document.getElementById('detailPanel').classList.remove('mobile-open');
+  document.getElementById('mobileOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  document.getElementById('detailEmpty').style.display = '';
+  const content = document.getElementById('detailContent');
+  content.classList.remove('visible');
+  content.style.display = 'none';
+}
+
+// ============================================================
 // KEYBOARD SHORTCUTS
 // ============================================================
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && selectedId) {
+    if (isMobile()) { closeMobilePanel(); return; }
     selectedId = null;
     document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
     document.getElementById('detailEmpty').style.display = '';
