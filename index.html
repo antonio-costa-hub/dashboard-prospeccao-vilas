@@ -806,6 +806,7 @@
   tr.lead-row {
     animation: fadeInUp 0.28s ease both;
   }
+  tr.lead-row.no-anim { animation: none !important; }
 
   /* ── P1 PULSE ── */
   .priority.p1 {
@@ -1289,7 +1290,7 @@ function getVisibleLeads() {
   });
 }
 
-function renderTable() {
+function renderTable(noAnim = false) {
   const section = document.getElementById('tableSection');
   const visible = getVisibleLeads();
 
@@ -1340,7 +1341,7 @@ function renderTable() {
       const wppNum = l.phone.replace(/\D/g,'');
       const wppLink = wppNum && wppNum.length >= 10 ? `<a href="https://wa.me/55${wppNum}" target="_blank" onclick="event.stopPropagation()" class="wpp-chip" title="Abrir WhatsApp">💬 WPP</a>` : '';
       html += `
-        <tr class="lead-row${sel}" id="row-${l.id}" onclick="selectLead(${l.id})" style="animation-delay:${rowIdx * 0.03}s">
+        <tr class="lead-row${sel}${noAnim?' no-anim':''}" id="row-${l.id}" onclick="selectLead(${l.id})" style="animation-delay:${noAnim?'0s':rowIdx * 0.03+'s'}">
           <td>
             <div class="lead-name">${l.name}</div>
             ${tblLinks.length ? `<div class="table-links">${tblLinks.join('')}</div>` : ''}
@@ -1587,14 +1588,38 @@ function setPriority(id, val, btn) {
   btn.closest('.priority-grid').querySelectorAll('.priority-opt').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const lead = getLead(id);
-  if (lead) lead.customPriority = val;
+  if (!lead) return;
+  lead.customPriority = val;
+  // Atualiza o badge na linha da tabela imediatamente (sem salvar)
+  const rowPrioEl = document.querySelector(`#row-${id} .priority`);
+  if (rowPrioEl) {
+    const map = { P1: ['p1','🔥 Alta'], P2: ['p2','⚡ Média'], P3: ['p3','❄️ Baixa'] };
+    rowPrioEl.className = `priority ${map[val][0]}`;
+    rowPrioEl.textContent = map[val][1];
+  }
 }
 
 function setStatus(id, val, btn) {
   btn.closest('.status-grid').querySelectorAll('.status-opt').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const lead = getLead(id);
-  if (lead) lead.customStatus = val;
+  if (!lead) return;
+  lead.customStatus = val;
+  // Atualiza o badge na linha da tabela imediatamente (sem salvar)
+  const rowStatusEl = document.querySelector(`#row-${id} .status`);
+  if (rowStatusEl) {
+    const statusMap = {
+      'nao-contatado': ['s-nao-contatado','Não contatado'],
+      'contatado':     ['s-contatado','Contatado'],
+      'interesse':     ['s-interesse','Demonstrou interesse'],
+      'reuniao':       ['s-reuniao','Reunião agendada'],
+      'fechado':       ['s-fechado','Fechado ✓'],
+      'sem-interesse': ['s-sem-interesse','Sem interesse'],
+    };
+    const d = statusMap[val] || statusMap['nao-contatado'];
+    rowStatusEl.className = `status ${d[0]}`;
+    rowStatusEl.textContent = d[1];
+  }
 }
 
 function saveDetail(id) {
@@ -1611,21 +1636,37 @@ function saveDetail(id) {
 
   setTimeout(() => {
     saveLeads();
-    renderTable();
-    setTimeout(() => {
-      document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
-      const row = document.getElementById('row-'+id);
-      if (row) row.classList.add('selected');
-    }, 10);
-    if (btn) {
-      btn.innerHTML = '✓ Salvo!';
-      setTimeout(() => {
-        btn.innerHTML = '✓ Salvar Alterações';
-        btn.disabled = false;
-      }, 1200);
-    }
+    renderTable(true); // noAnim = true, sem flash de animação
+    const stillVisible = getVisibleLeads().find(l => l.id === id);
     const stageInfo = STAGE_LIST.find(s => s.key === (lead.customStatus || lead.status));
-    showToast(stageInfo ? `${stageInfo.icon} Movido para: ${stageInfo.label}` : 'Salvo com sucesso');
+    if (stillVisible) {
+      // Lead continua na etapa atual — mantém seleção
+      setTimeout(() => {
+        document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
+        const row = document.getElementById('row-'+id);
+        if (row) row.classList.add('selected');
+      }, 10);
+      if (btn) {
+        btn.innerHTML = '✓ Salvo!';
+        setTimeout(() => {
+          btn.innerHTML = '✓ Salvar Alterações';
+          btn.disabled = false;
+        }, 1200);
+      }
+    } else {
+      // Lead foi movido para outra etapa — fecha o painel
+      selectedId = null;
+      document.getElementById('detailEmpty').style.display = '';
+      const content = document.getElementById('detailContent');
+      content.classList.remove('visible');
+      content.style.display = 'none';
+      if (isDrawer()) {
+        document.getElementById('detailPanel').classList.remove('mobile-open');
+        document.getElementById('mobileOverlay').classList.remove('show');
+        document.body.style.overflow = '';
+      }
+    }
+    showToast(stageInfo ? `${stageInfo.icon} Movido para: ${stageInfo.label}` : '✓ Salvo com sucesso');
   }, 320);
 }
 
