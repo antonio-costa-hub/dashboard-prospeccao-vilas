@@ -1017,6 +1017,63 @@
   body.drawer-mode .stage-label { font-size: 9px; }
   body.drawer-mode .stage-icon { font-size: 15px; }
   body.drawer-mode .stage-count { font-size: 9px; padding: 0 5px; }
+
+  /* ── Activity Panel ─────────────────────────────────────────── */
+  .activity-bar {
+    margin: 0 16px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .activity-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: .05em;
+  }
+  .activity-header:hover { color: var(--text); }
+  .activity-title { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 12px; color: var(--text); }
+  .activity-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    flex-shrink: 0;
+  }
+  .activity-dot.offline { background: var(--muted); box-shadow: none; }
+  .activity-chevron { margin-left: auto; transition: transform .2s; font-size: 10px; }
+  .activity-bar.open .activity-chevron { transform: rotate(180deg); }
+  .activity-refresh {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    font-size: 10px; padding: 2px 8px; border-radius: 4px; cursor: pointer;
+    font-family: 'DM Mono', monospace;
+  }
+  .activity-refresh:hover { color: var(--text); border-color: var(--accent); }
+  .activity-body { display: none; border-top: 1px solid var(--border); }
+  .activity-bar.open .activity-body { display: block; }
+  .activity-list { max-height: 180px; overflow-y: auto; }
+  .activity-item {
+    display: flex; gap: 10px; align-items: baseline;
+    padding: 7px 14px; border-bottom: 1px solid var(--border);
+    font-size: 11px; line-height: 1.4;
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-time { color: var(--muted); white-space: nowrap; flex-shrink: 0; font-size: 10px; }
+  .activity-lead { color: var(--accent); font-weight: 600; flex-shrink: 0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .activity-desc { color: var(--text); }
+  .activity-empty { padding: 16px 14px; color: var(--muted); font-size: 11px; text-align: center; }
+  .activity-status-badge { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 600; vertical-align: middle; }
+  .activity-status-badge.s-contatado      { background:#7c6aff22; color:#7c6aff; }
+  .activity-status-badge.s-interesse      { background:#fbbf2422; color:#fbbf24; }
+  .activity-status-badge.s-reuniao        { background:#ff6b3522; color:#ff6b35; }
+  .activity-status-badge.s-fechado        { background:#00e5a022; color:#00e5a0; }
+  .activity-status-badge.s-sem-interesse  { background:#ef444422; color:#ef4444; }
+  .activity-status-badge.s-nao-contatado  { background:#6b728022; color:#9ca3af; }
 </style>
 </head>
 <body>
@@ -1053,6 +1110,20 @@
   <span class="pipeline-label">Pipeline</span>
   <div class="pipeline-track" id="pipelineTrack"></div>
   <div class="pipeline-legend" id="pipelineLegend"></div>
+</div>
+
+<div class="activity-bar" id="activityBar">
+  <div class="activity-header" onclick="toggleActivity()">
+    <span class="activity-dot" id="activityDot"></span>
+    <span class="activity-title">Atividade Recente</span>
+    <button class="activity-refresh" onclick="event.stopPropagation(); loadHistory()" title="Atualizar">↻ atualizar</button>
+    <span class="activity-chevron">▼</span>
+  </div>
+  <div class="activity-body">
+    <div class="activity-list" id="activityList">
+      <div class="activity-empty">Carregando...</div>
+    </div>
+  </div>
 </div>
 
 <div class="toolbar">
@@ -1175,19 +1246,119 @@ const allLeads = [
 ];
 
 // ============================================================
+// CONFIG
+// ============================================================
+// Troque pela URL do seu backend no Railway após o deploy:
+const API_URL = (window.PROSPEC_API_URL || 'https://dashboard-prospeccao-vilas-production.up.railway.app').replace(/\/$/, '');
+
+// ============================================================
 // STATE
 // ============================================================
-let leads = JSON.parse(localStorage.getItem('prospec_leads') || 'null') || 
+let leads = JSON.parse(localStorage.getItem('prospec_leads') || 'null') ||
   allLeads.map(l => ({...l, customObs: '', customStatus: l.status, customPriority: l.priority}));
 let selectedId = null;
 let currentFilter = 'todos';
 let searchQuery = '';
 let currentStage = 'todos';
+let _historyInterval = null;
 
 function saveLeads() {
   localStorage.setItem('prospec_leads', JSON.stringify(leads));
 }
 function getLead(id) { return leads.find(l => l.id === id); }
+
+// ── API helpers ───────────────────────────────────────────────
+async function apiGet(path) {
+  if (!API_URL) return null;
+  try {
+    const r = await fetch(API_URL + path);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+async function apiPatch(path, body) {
+  if (!API_URL) return null;
+  try {
+    const r = await fetch(API_URL + path, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+// ── Init: carrega leads da API (com fallback para localStorage) ──
+async function initLeads() {
+  if (!API_URL) return; // sem API configurada — usa localStorage
+  const data = await apiGet('/leads');
+  if (!data) return;
+  // Mapeia para o formato esperado pelo frontend
+  leads = data.map(l => ({
+    ...l,
+    customObs:      l.customObs      ?? '',
+    customStatus:   l.customStatus   ?? l.status,
+    customPriority: l.customPriority ?? l.priority,
+  }));
+  saveLeads(); // atualiza cache local
+  renderTable();
+  renderStageSidebar();
+  updateStats();
+  renderPipeline();
+  document.getElementById('activityDot').classList.remove('offline');
+}
+
+// ── Activity log ──────────────────────────────────────────────
+function toggleActivity() {
+  document.getElementById('activityBar').classList.toggle('open');
+  if (document.getElementById('activityBar').classList.contains('open')) {
+    loadHistory();
+  }
+}
+
+const STATUS_LABELS = {
+  'nao-contatado': 'Não contatado',
+  'contatado':     'Contatado',
+  'interesse':     'Demonstrou interesse',
+  'reuniao':       'Reunião agendada',
+  'fechado':       'Fechado ✓',
+  'sem-interesse': 'Sem interesse',
+};
+
+async function loadHistory() {
+  if (!API_URL) {
+    document.getElementById('activityList').innerHTML =
+      '<div class="activity-empty">Configure API_URL para ver o histórico.</div>';
+    return;
+  }
+  const data = await apiGet('/history?limit=25');
+  const list = document.getElementById('activityList');
+  if (!data || data.length === 0) {
+    list.innerHTML = '<div class="activity-empty">Nenhuma alteração registrada ainda.</div>';
+    return;
+  }
+  list.innerHTML = data.map(h => {
+    const dt = new Date(h.changed_at + 'Z');
+    const time = dt.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    let desc = '';
+    if (h.field === 'status') {
+      const label = STATUS_LABELS[h.new_value] || h.new_value;
+      const cls = 's-' + h.new_value;
+      desc = `status → <span class="activity-status-badge ${cls}">${label}</span>`;
+    } else if (h.field === 'prioridade') {
+      desc = `prioridade → <strong>${h.new_value}</strong>`;
+    } else {
+      desc = `anotação atualizada`;
+    }
+    return `<div class="activity-item">
+      <span class="activity-time">${time}</span>
+      <span class="activity-lead" title="${h.lead_name}">${h.lead_name}</span>
+      <span class="activity-desc">${desc}</span>
+    </div>`;
+  }).join('');
+}
 
 // ============================================================
 // SCRIPTS
@@ -1631,6 +1802,17 @@ function saveDetail(id) {
     btn.innerHTML = '<span class="btn-spinner"></span> Salvando...';
   }
 
+  // Sincroniza com o backend (fire-and-forget, não bloqueia a UI)
+  apiPatch('/leads/' + id, {
+    customStatus:   lead.customStatus,
+    customPriority: lead.customPriority,
+    customObs:      lead.customObs,
+  }).then(() => {
+    if (document.getElementById('activityBar').classList.contains('open')) {
+      loadHistory();
+    }
+  });
+
   setTimeout(() => {
     saveLeads();
     renderTable(true); // noAnim = true, sem flash de animação
@@ -1803,6 +1985,17 @@ syncLayout();
 renderTable();
 // animate stat counters on first load
 setTimeout(() => animateCounters(['stat-total','stat-p1','stat-contatados','stat-fechados']), 100);
+
+// Carrega dados da API e inicia polling do histórico
+document.getElementById('activityDot').classList.add('offline');
+initLeads().then(() => {
+  // Polling: atualiza histórico a cada 30s se o painel estiver aberto
+  _historyInterval = setInterval(() => {
+    if (document.getElementById('activityBar').classList.contains('open')) {
+      loadHistory();
+    }
+  }, 30000);
+});
 </script>
 </body>
 </html>
