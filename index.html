@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Dashboard de Prospecção — Vilas do Atlântico</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
@@ -1982,19 +1985,19 @@ document.addEventListener('keydown', (e) => {
 // INIT
 // ============================================================
 syncLayout();
-renderTable();
-// animate stat counters on first load
-setTimeout(() => animateCounters(['stat-total','stat-p1','stat-contatados','stat-fechados']), 100);
-
-// Carrega dados da API e inicia polling do histórico
 document.getElementById('activityDot').classList.add('offline');
+
 initLeads().then(() => {
-  // Polling: atualiza histórico a cada 30s se o painel estiver aberto
+  setTimeout(() => animateCounters(['stat-total','stat-p1','stat-contatados','stat-fechados']), 100);
   _historyInterval = setInterval(() => {
     if (document.getElementById('activityBar').classList.contains('open')) {
       loadHistory();
     }
   }, 30000);
+}).catch(() => {
+  // fallback: API indisponível — usa localStorage
+  renderTable();
+  setTimeout(() => animateCounters(['stat-total','stat-p1','stat-contatados','stat-fechados']), 100);
 });
 </script>
 </body>

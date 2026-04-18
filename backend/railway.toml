@@ -1,13 +1,9 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "backend/Dockerfile"
+rootDirectory = "backend"
 
 [deploy]
 startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
-
-[[volumes]]
-mountPath = "/app/data"
-name = "leads-data"
