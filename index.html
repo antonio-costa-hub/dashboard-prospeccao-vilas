@@ -1252,7 +1252,7 @@ const allLeads = [
 // CONFIG
 // ============================================================
 // Troque pela URL do seu backend no Railway após o deploy:
-const API_URL = (window.PROSPEC_API_URL || 'https://dashboard-prospeccao-vilas-production.up.railway.app').replace(/\/$/, '');
+const API_URL = (window.PROSPEC_API_URL || '').replace(/\/$/, '');
 
 // ============================================================
 // STATE
@@ -1280,12 +1280,12 @@ async function apiGet(path) {
   } catch { return null; }
 }
 
-async function apiPatch(path, body) {
+async function apiPost(body) {
   if (!API_URL) return null;
   try {
-    const r = await fetch(API_URL + path, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(body),
     });
     if (!r.ok) return null;
@@ -1296,7 +1296,7 @@ async function apiPatch(path, body) {
 // ── Init: carrega leads da API (com fallback para localStorage) ──
 async function initLeads() {
   if (!API_URL) return; // sem API configurada — usa localStorage
-  const data = await apiGet('/leads');
+  const data = await apiGet('?action=leads');
   if (!data) return;
   // Mapeia para o formato esperado pelo frontend
   leads = data.map(l => ({
@@ -1336,7 +1336,7 @@ async function loadHistory() {
       '<div class="activity-empty">Configure API_URL para ver o histórico.</div>';
     return;
   }
-  const data = await apiGet('/history?limit=25');
+  const data = await apiGet('?action=history&limit=25');
   const list = document.getElementById('activityList');
   if (!data || data.length === 0) {
     list.innerHTML = '<div class="activity-empty">Nenhuma alteração registrada ainda.</div>';
@@ -1806,7 +1806,9 @@ function saveDetail(id) {
   }
 
   // Sincroniza com o backend (fire-and-forget, não bloqueia a UI)
-  apiPatch('/leads/' + id, {
+  apiPost({
+    action:         'update',
+    id:             id,
     customStatus:   lead.customStatus,
     customPriority: lead.customPriority,
     customObs:      lead.customObs,
