@@ -1,2006 +1,1590 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Dashboard de Prospecção — Vilas do Atlântico</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
-
-  :root {
-    --bg: #0d0f14;
-    --surface: #141720;
-    --surface2: #1c2030;
-    --border: #252a3a;
-    --accent: #00e5a0;
-    --accent2: #ff6b35;
-    --accent3: #7c6aff;
-    --text: #e8eaf0;
-    --muted: #6b7280;
-    --p1: #00e5a0;
-    --p2: #fbbf24;
-    --p3: #ef4444;
-  }
-
-  * { margin:0; padding:0; box-sizing:border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    min-height: 100vh;
-  }
-
-  /* HEADER */
-  .header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 18px 28px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--accent);
-    letter-spacing: -0.5px;
-    flex: 1;
-  }
-  .header-meta {
-    color: var(--muted);
-    font-size: 11px;
-  }
-
-  /* STATS BAR */
-  .stats-bar {
-    display: flex;
-    gap: 1px;
-    background: var(--border);
-    border-bottom: 1px solid var(--border);
-  }
-  .stat {
-    flex: 1;
-    background: var(--surface);
-    padding: 14px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-  .stat-num {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-  }
-  .stat-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
-  .stat-num.green { color: var(--p1); }
-  .stat-num.yellow { color: var(--p2); }
-  .stat-num.orange { color: var(--accent2); }
-  .stat-num.purple { color: var(--accent3); }
-
-  /* TOOLBAR */
-  .toolbar {
-    padding: 14px 28px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-  .search-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 7px 12px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    width: 220px;
-    outline: none;
-    transition: border-color .2s;
-  }
-  .search-box:focus { border-color: var(--accent); }
-  .search-box::placeholder { color: var(--muted); }
-
-  .filter-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 7px 14px;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all .2s;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .filter-btn:hover, .filter-btn.active {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(0,229,160,0.07);
-  }
-
-  .spacer { flex: 1; }
-
-  .export-btn {
-    background: var(--accent);
-    border: none;
-    border-radius: 6px;
-    padding: 7px 16px;
-    color: #000;
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: opacity .2s;
-  }
-  .export-btn:hover { opacity: 0.85; }
-
-  /* MAIN LAYOUT */
-  .main {
-    display: grid;
-    grid-template-columns: 190px 1fr 360px;
-    height: calc(100vh - 178px);
-  }
-
-  /* TABLE SECTION */
-  .table-section {
-    overflow-y: auto;
-    border-right: 1px solid var(--border);
-  }
-
-  /* NICHO GROUP */
-  .nicho-group { border-bottom: 1px solid var(--border); }
-  .nicho-header {
-    padding: 10px 20px;
-    background: var(--surface2);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    cursor: pointer;
-    user-select: none;
-  }
-  .nicho-header:hover { background: #1e2436; }
-  .nicho-icon { font-size: 14px; }
-  .nicho-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-  }
-  .nicho-count {
-    background: var(--border);
-    border-radius: 10px;
-    padding: 2px 8px;
-    font-size: 10px;
-    color: var(--muted);
-    margin-left: auto;
-  }
-  .nicho-chevron { color: var(--muted); font-size: 10px; }
-
-  /* TABLE */
-  table { width: 100%; border-collapse: collapse; }
-  th {
-    padding: 8px 14px;
-    text-align: left;
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-  }
-  tr.lead-row {
-    border-bottom: 1px solid rgba(37,42,58,0.6);
-    cursor: pointer;
-    transition: background .15s;
-  }
-  tr.lead-row:hover { background: rgba(255,255,255,0.03); }
-  tr.lead-row.selected { background: rgba(0,229,160,0.06); }
-  td {
-    padding: 9px 14px;
-    vertical-align: middle;
-  }
-  .lead-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
-  }
-  .lead-phone {
-    color: var(--muted);
-    font-size: 11px;
-  }
-
-  /* PRIORITY BADGE */
-  .priority {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-  }
-  .p1 { background: rgba(0,229,160,0.12); color: var(--p1); border: 1px solid rgba(0,229,160,0.3); }
-  .p2 { background: rgba(251,191,36,0.12); color: var(--p2); border: 1px solid rgba(251,191,36,0.3); }
-  .p3 { background: rgba(239,68,68,0.12); color: var(--p3); border: 1px solid rgba(239,68,68,0.3); }
-
-  /* STATUS BADGE */
-  .status {
-    display: inline-block;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    border: 1px solid;
-  }
-  .s-nao-contatado { background: rgba(107,114,128,0.1); color: var(--muted); border-color: rgba(107,114,128,0.3); }
-  .s-contatado { background: rgba(124,106,255,0.12); color: var(--accent3); border-color: rgba(124,106,255,0.3); }
-  .s-interesse { background: rgba(251,191,36,0.12); color: var(--p2); border-color: rgba(251,191,36,0.3); }
-  .s-reuniao { background: rgba(255,107,53,0.12); color: var(--accent2); border-color: rgba(255,107,53,0.3); }
-  .s-fechado { background: rgba(0,229,160,0.12); color: var(--p1); border-color: rgba(0,229,160,0.3); }
-  .s-sem-interesse { background: rgba(239,68,68,0.12); color: var(--p3); border-color: rgba(239,68,68,0.3); }
-
-  /* STARS */
-  .stars { color: var(--p2); font-size: 11px; letter-spacing: -1px; }
-  .stars-count { color: var(--muted); font-size: 10px; margin-left: 3px; }
-
-  /* DETAIL PANEL */
-  .detail-panel {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .detail-empty {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    color: var(--muted);
-  }
-  .detail-empty-icon { font-size: 36px; opacity: 0.3; }
-  .detail-empty-text { font-size: 12px; }
-
-  .detail-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: none;
-    flex-direction: column;
-    gap: 18px;
-  }
-  .detail-content.visible { display: flex; }
-
-  .detail-top {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .detail-nicho-tag {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--muted);
-  }
-  .detail-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 800;
-    line-height: 1.2;
-  }
-  .detail-addr { color: var(--muted); font-size: 11px; line-height: 1.5; }
-
-  .detail-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .detail-label {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    min-width: 70px;
-  }
-
-  /* FIELD SECTIONS */
-  .section-title {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--muted);
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 8px;
-  }
-
-  /* STATUS SELECTOR */
-  .status-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
-  }
-  .status-opt {
-    padding: 6px 10px;
-    border-radius: 5px;
-    font-size: 10px;
-    text-align: center;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    transition: all .15s;
-    font-family: 'DM Mono', monospace;
-  }
-  .status-opt:hover, .status-opt.active {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(0,229,160,0.07);
-  }
-
-  /* PRIORITY SELECTOR */
-  .priority-grid {
-    display: flex;
-    gap: 6px;
-  }
-  .priority-opt {
-    flex: 1;
-    padding: 6px;
-    border-radius: 5px;
-    font-size: 10px;
-    text-align: center;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    transition: all .15s;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-  .priority-opt.p1-opt:hover, .priority-opt.p1-opt.active { border-color: var(--p1); color: var(--p1); background: rgba(0,229,160,0.07); }
-  .priority-opt.p2-opt:hover, .priority-opt.p2-opt.active { border-color: var(--p2); color: var(--p2); background: rgba(251,191,36,0.07); }
-  .priority-opt.p3-opt:hover, .priority-opt.p3-opt.active { border-color: var(--p3); color: var(--p3); background: rgba(239,68,68,0.07); }
-
-  /* NOTES TEXTAREA */
-  .notes-field {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 12px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    width: 100%;
-    min-height: 90px;
-    resize: vertical;
-    outline: none;
-    transition: border-color .2s;
-    line-height: 1.6;
-  }
-  .notes-field:focus { border-color: var(--accent); }
-  .notes-field::placeholder { color: var(--muted); }
-
-  /* SCRIPT SECTION */
-  .script-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent3);
-    border-radius: 6px;
-    padding: 12px;
-    font-size: 11px;
-    line-height: 1.8;
-    color: #c8cfe0;
-    white-space: pre-wrap;
-    position: relative;
-  }
-  .copy-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: var(--border);
-    border: none;
-    border-radius: 4px;
-    padding: 3px 8px;
-    color: var(--muted);
-    font-size: 9px;
-    cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    transition: all .15s;
-    text-transform: uppercase;
-  }
-  .copy-btn:hover { color: var(--accent); }
-
-  /* SAVE BTN */
-  .save-btn {
-    background: var(--accent);
-    border: none;
-    border-radius: 6px;
-    padding: 10px;
-    color: #000;
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 100%;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: opacity .2s;
-  }
-  .save-btn:hover { opacity: 0.85; }
-  .save-btn:active { transform: scale(0.99); }
-
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-  /* COLLAPSED — handled by max-height transition below */
-
-  .tel-link { color: var(--accent); text-decoration: none; }
-  .tel-link:hover { text-decoration: underline; }
-
-  .links-row { display: flex; gap: 5px; flex-wrap: wrap; }
-  .link-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 3px 9px;
-    border-radius: 4px;
-    font-size: 10px;
-    text-decoration: none;
-    border: 1px solid;
-    transition: opacity .15s;
-    white-space: nowrap;
-    font-family: 'DM Mono', monospace;
-  }
-  .link-chip:hover { opacity: 0.75; }
-  .link-chip.ig { color: #e879f9; border-color: rgba(232,121,249,0.35); background: rgba(232,121,249,0.07); }
-  .link-chip.site { color: var(--accent3); border-color: rgba(124,106,255,0.35); background: rgba(124,106,255,0.07); }
-  .link-chip.maps { color: #60a5fa; border-color: rgba(96,165,250,0.35); background: rgba(96,165,250,0.07); }
-
-  .table-links { display: flex; gap: 4px; margin-top: 3px; }
-
-  .rating-row { display: flex; align-items: center; gap: 4px; }
-
-  .saved-toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--accent);
-    color: #000;
-    padding: 10px 18px;
-    border-radius: 8px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all .3s;
-    pointer-events: none;
-    z-index: 999;
-  }
-  .saved-toast.show { opacity: 1; transform: translateY(0); }
-
-  /* ══════════════════════════════════════════
-     FLUID — escala para qualquer tela
-     Sem breakpoints fixos. Layout reage ao
-     espaço real disponível via clamp() e
-     ResizeObserver no JS.
-  ══════════════════════════════════════════ */
-
-  /* Tipografia e espaçamento fluidos */
-  body          { font-size: clamp(11px, 1.3vw, 13px); }
-  .header       { padding: clamp(10px,2vw,18px) clamp(14px,3vw,28px); gap: clamp(8px,1.5vw,20px); }
-  .header-title { font-size: clamp(13px, 2vw, 18px); }
-  .header-meta  { font-size: clamp(9px, 1vw, 11px); }
-
-  /* Stats: cada card tem mínimo 120px, envolve naturalmente */
-  .stats-bar { flex-wrap: wrap; }
-  .stat       { flex: 1 1 120px; padding: clamp(10px,1.5vw,14px) clamp(12px,2vw,20px); }
-  .stat-num   { font-size: clamp(16px, 2.5vw, 22px); }
-
-  /* Pipeline: legenda some quando espaço < 600px */
-  .pipeline-bar    { padding: clamp(8px,1.5vw,10px) clamp(14px,3vw,28px); }
-  .pipeline-legend { display: flex; overflow: hidden; max-width: clamp(0px, 60vw, 999px); }
-
-  /* Toolbar fluida */
-  .toolbar {
-    padding: clamp(8px,1.5vw,14px) clamp(12px,2.5vw,28px);
-    gap: clamp(6px,1vw,10px);
-    flex-wrap: nowrap;
-  }
-  .search-box   { width: clamp(140px, 20vw, 220px); }
-  .filter-btn   { font-size: clamp(10px, 1.1vw, 11px); padding: clamp(5px,0.8vw,7px) clamp(8px,1.2vw,14px); }
-  .export-btn   { font-size: clamp(10px, 1vw, 11px); padding: clamp(5px,0.8vw,7px) clamp(10px,1.5vw,16px); white-space: nowrap; }
-
-  /* Grid principal: painel encolhe com a tela (mín 260px) */
-  .main {
-    grid-template-columns: 190px 1fr clamp(260px, 28vw, 380px);
-    height: calc(100dvh - var(--chrome-h, 175px));
-  }
-
-  /* Tabela fluida */
-  th, td        { padding: clamp(6px,1vw,9px) clamp(8px,1.2vw,14px); }
-  .lead-name    { font-size: clamp(10px, 1.2vw, 12px); }
-  .detail-content { padding: clamp(12px,2vw,20px); gap: clamp(12px,1.5vw,18px); }
-  .detail-name  { font-size: clamp(13px, 2vw, 16px); }
-
-  /* ── MODO DRAWER (classe adicionada pelo ResizeObserver) ──
-     Ativa quando a viewport é estreita demais para duas colunas */
-
-  /* Overlay */
-  .mobile-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.52);
-    z-index: 199;
-  }
-  .mobile-overlay.show { display: block; }
-
-  /* Botão fechar — oculto por padrão, só no drawer */
-  .mobile-close-btn {
-    display: none;
-    position: absolute;
-    top: 16px; right: 14px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 4px 10px;
-    color: var(--muted);
-    font-size: 11px;
-    cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    z-index: 10;
-    align-items: center;
-    gap: 5px;
-  }
-
-  /* Drawer ativo */
-  body.drawer-mode .main {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-  }
-  body.drawer-mode .table-section {
-    overflow-x: auto;
-    border-right: none;
-    min-height: calc(100dvh - var(--chrome-h, 175px));
-  }
-  body.drawer-mode table         { min-width: 500px; }
-  body.drawer-mode .stars-count  { display: none; }
-  body.drawer-mode .wpp-chip     { display: none; }
-  body.drawer-mode .table-links  { display: none; }
-  body.drawer-mode .pipeline-bar { display: none; }
-  body.drawer-mode .search-box   { width: 100%; }
-  body.drawer-mode .toolbar      { flex-direction: column; align-items: stretch; }
-  body.drawer-mode .export-btn   { width: 100%; text-align: center; }
-  body.drawer-mode .header-meta  { display: none; }
-
-  /* Painel vira bottom sheet no drawer */
-  body.drawer-mode .detail-panel {
-    display: flex !important;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 72dvh;
-    background: var(--surface);
-    border-top: 2px solid var(--border);
-    border-radius: 20px 20px 0 0;
-    z-index: 200;
-    transform: translateY(100%);
-    transition: transform 0.32s cubic-bezier(.4,0,.2,1);
-    box-shadow: 0 -10px 50px rgba(0,0,0,0.55);
-    flex-direction: column;
-    overflow: hidden;
-  }
-  body.drawer-mode .detail-panel::before {
-    content: '';
-    display: block;
-    width: 38px; height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 12px auto 4px;
-    flex-shrink: 0;
-  }
-  body.drawer-mode .detail-panel.mobile-open { transform: translateY(0); }
-  body.drawer-mode .mobile-close-btn         { display: flex !important; }
-  body.drawer-mode .saved-toast              { bottom: 74dvh; }
-
-  /* ── HEADER GRADIENT BORDER ── */
-  .header {
-    overflow: hidden;
-  }
-  .header::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, var(--accent) 30%, var(--accent3) 60%, var(--accent2) 80%, transparent 100%);
-    background-size: 200% 100%;
-    animation: shimmer 4s linear infinite;
-  }
-
-  /* ── KEYFRAMES ── */
-  @keyframes shimmer {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(24px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
-    50%       { box-shadow: 0 0 10px 3px rgba(0,229,160,0.45); }
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* ── STAT PROGRESS BAR ── */
-  .stat-progress {
-    height: 2px;
-    background: var(--border);
-    border-radius: 1px;
-    margin-top: 8px;
-    overflow: hidden;
-  }
-  .stat-progress-fill {
-    height: 100%;
-    border-radius: 1px;
-    width: 0%;
-    transition: width 0.8s cubic-bezier(.4,0,.2,1);
-  }
-  .stat-progress-fill.green-fill  { background: var(--p1); }
-  .stat-progress-fill.yellow-fill { background: var(--p2); }
-  .stat-progress-fill.orange-fill { background: var(--accent2); }
-  .stat-progress-fill.purple-fill { background: var(--accent3); }
-
-  /* ── PIPELINE BAR ── */
-  .pipeline-bar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 28px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .pipeline-label {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .pipeline-track {
-    display: flex;
-    flex: 1;
-    height: 6px;
-    border-radius: 3px;
-    overflow: hidden;
-    gap: 1px;
-    background: var(--border);
-  }
-  .pipeline-seg {
-    height: 100%;
-    transition: width 0.7s cubic-bezier(.4,0,.2,1);
-    position: relative;
-  }
-  .pipeline-seg:first-child { border-radius: 3px 0 0 3px; }
-  .pipeline-seg:last-child  { border-radius: 0 3px 3px 0; }
-  .pipeline-legend {
-    display: flex;
-    gap: 14px;
-    flex-shrink: 0;
-  }
-  .pipeline-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 9px;
-    color: var(--muted);
-    white-space: nowrap;
-  }
-  .pipeline-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .pipeline-item strong {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    color: var(--text);
-    font-size: 10px;
-  }
-
-  /* ── TOOLBAR SCROLL ── */
-  .toolbar {
-    flex-wrap: nowrap !important;
-    overflow: hidden;
-    gap: 8px;
-  }
-  .filter-pills {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    flex: 1;
-    position: relative;
-  }
-  .filter-pills::-webkit-scrollbar { display: none; }
-
-  /* ── SEARCH WRAPPER ── */
-  .search-wrapper {
-    position: relative;
-    flex-shrink: 0;
-  }
-  .search-icon {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 11px;
-    pointer-events: none;
-    opacity: 0.5;
-  }
-  .search-box {
-    padding-left: 30px !important;
-    padding-right: 28px !important;
-  }
-  .search-box:focus {
-    box-shadow: 0 0 0 2px rgba(0,229,160,0.18);
-  }
-  .search-clear {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 16px;
-    line-height: 1;
-    padding: 2px 3px;
-    display: none;
-    transition: color 0.15s;
-  }
-  .search-clear.show { display: block; }
-  .search-clear:hover { color: var(--text); }
-
-  /* ── STAGGERED ROW ANIMATIONS ── */
-  tr.lead-row {
-    animation: fadeInUp 0.28s ease both;
-  }
-  tr.lead-row.no-anim { animation: none !important; }
-
-  /* ── P1 PULSE ── */
-  .priority.p1 {
-    animation: pulseGlow 2.2s ease-in-out infinite;
-  }
-
-  /* ── NICHO CHEVRON ROTATION ── */
-  .nicho-chevron {
-    transition: transform 0.3s ease;
-    display: inline-block;
-    font-size: 10px;
-    color: var(--muted);
-  }
-  .nicho-chevron.collapsed {
-    transform: rotate(-90deg);
-  }
-
-  /* ── COLLAPSIBLE MAX-HEIGHT ── */
-  .nicho-body {
-    max-height: 4000px;
-    overflow: hidden;
-    transition: max-height 0.45s ease;
-  }
-  .nicho-body.collapsed {
-    max-height: 0 !important;
-    display: block !important;
-  }
-
-  /* ── DETAIL PANEL SLIDE-IN ── */
-  .detail-content.visible {
-    display: flex;
-    animation: slideInRight 0.28s ease;
-  }
-
-  /* ── SECTION TITLE REDESIGN ── */
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 8px;
-    padding-bottom: 0;
-    border-bottom: none;
-  }
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* ── STATUS OPT DISTINCT COLORS ── */
-  .status-opt[data-v="contatado"]:hover,
-  .status-opt[data-v="contatado"].active   { border-color: var(--accent3); color: var(--accent3); background: rgba(124,106,255,0.08); }
-  .status-opt[data-v="interesse"]:hover,
-  .status-opt[data-v="interesse"].active   { border-color: var(--p2); color: var(--p2); background: rgba(251,191,36,0.08); }
-  .status-opt[data-v="reuniao"]:hover,
-  .status-opt[data-v="reuniao"].active     { border-color: var(--accent2); color: var(--accent2); background: rgba(255,107,53,0.08); }
-  .status-opt[data-v="fechado"]:hover,
-  .status-opt[data-v="fechado"].active     { border-color: var(--p1); color: var(--p1); background: rgba(0,229,160,0.08); }
-  .status-opt[data-v="sem-interesse"]:hover,
-  .status-opt[data-v="sem-interesse"].active { border-color: var(--p3); color: var(--p3); background: rgba(239,68,68,0.08); }
-
-  /* ── WHATSAPP CHIP ── */
-  .wpp-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 2px 7px;
-    border-radius: 4px;
-    font-size: 9px;
-    text-decoration: none;
-    border: 1px solid rgba(37,211,102,0.35);
-    background: rgba(37,211,102,0.07);
-    color: #25d366;
-    opacity: 0;
-    transition: opacity 0.18s;
-    white-space: nowrap;
-    font-family: 'DM Mono', monospace;
-    margin-left: 6px;
-    vertical-align: middle;
-    flex-shrink: 0;
-  }
-  tr.lead-row:hover .wpp-chip { opacity: 1; }
-
-  /* ── SAVE BUTTON STATES ── */
-  .save-btn .btn-spinner {
-    display: inline-block;
-    width: 11px; height: 11px;
-    border: 2px solid rgba(0,0,0,0.25);
-    border-top-color: #000;
-    border-radius: 50%;
-    animation: spin 0.55s linear infinite;
-    vertical-align: middle;
-    margin-right: 5px;
-  }
-
-  /* ── STARS CSS ── */
-  .star { letter-spacing: -1px; }
-  .star.full  { color: var(--p2); }
-  .star.half  { color: var(--p2); opacity: 0.5; }
-  .star.empty { color: var(--border); }
-
-  /* ── TOAST PILL REDESIGN ── */
-  .saved-toast {
-    border-radius: 24px !important;
-    padding: 10px 22px !important;
-    display: inline-flex !important;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 24px rgba(0,229,160,0.28);
-    font-size: 12px !important;
-  }
-
-  /* ── STAGE SIDEBAR ── */
-  .stage-sidebar {
-    border-right: 1px solid var(--border);
-    background: var(--surface);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    padding: 14px 0 20px;
-    gap: 1px;
-    flex-shrink: 0;
-  }
-  .stage-sidebar-title {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--muted);
-    padding: 0 14px 10px;
-    flex-shrink: 0;
-  }
-  .stage-divider {
-    height: 1px;
-    background: var(--border);
-    margin: 6px 14px;
-  }
-  .stage-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 14px;
-    cursor: pointer;
-    border-left: 2px solid transparent;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-  }
-  .stage-item:hover {
-    background: rgba(255,255,255,0.03);
-    color: var(--text);
-  }
-  .stage-item.active {
-    background: rgba(255,255,255,0.04);
-    border-left-color: var(--stage-color, var(--accent));
-    color: var(--stage-color, var(--accent));
-  }
-  .stage-icon { font-size: 13px; flex-shrink: 0; }
-  .stage-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; }
-  .stage-count {
-    background: var(--surface2);
-    border-radius: 10px;
-    padding: 1px 7px;
-    font-size: 9px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    color: var(--muted);
-    flex-shrink: 0;
-    min-width: 18px;
-    text-align: center;
-  }
-  .stage-item.active .stage-count {
-    background: rgba(255,255,255,0.1);
-    color: var(--text);
-  }
-
-  /* Stage sidebar em modo drawer: strip horizontal */
-  body.drawer-mode .stage-sidebar {
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 8px 10px;
-    gap: 4px;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  body.drawer-mode .stage-sidebar::-webkit-scrollbar { display: none; }
-  body.drawer-mode .stage-sidebar-title,
-  body.drawer-mode .stage-divider { display: none; }
-  body.drawer-mode .stage-item {
-    flex-direction: column;
-    gap: 3px;
-    padding: 6px 10px;
-    border-left: none;
-    border-bottom: 2px solid transparent;
-    border-radius: 8px;
-    flex-shrink: 0;
-    min-width: 64px;
-    align-items: center;
-    white-space: nowrap;
-    font-size: 10px;
-  }
-  body.drawer-mode .stage-item.active {
-    border-bottom-color: var(--stage-color, var(--accent));
-    border-left-color: transparent;
-  }
-  body.drawer-mode .stage-label { font-size: 9px; }
-  body.drawer-mode .stage-icon { font-size: 15px; }
-  body.drawer-mode .stage-count { font-size: 9px; padding: 0 5px; }
-
-  /* ── Activity Panel ─────────────────────────────────────────── */
-  .activity-bar {
-    margin: 0 16px 10px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .activity-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 14px;
-    cursor: pointer;
-    user-select: none;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: .05em;
-  }
-  .activity-header:hover { color: var(--text); }
-  .activity-title { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 12px; color: var(--text); }
-  .activity-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 6px var(--accent);
-    flex-shrink: 0;
-  }
-  .activity-dot.offline { background: var(--muted); box-shadow: none; }
-  .activity-chevron { margin-left: auto; transition: transform .2s; font-size: 10px; }
-  .activity-bar.open .activity-chevron { transform: rotate(180deg); }
-  .activity-refresh {
-    background: none; border: 1px solid var(--border); color: var(--muted);
-    font-size: 10px; padding: 2px 8px; border-radius: 4px; cursor: pointer;
-    font-family: 'DM Mono', monospace;
-  }
-  .activity-refresh:hover { color: var(--text); border-color: var(--accent); }
-  .activity-body { display: none; border-top: 1px solid var(--border); }
-  .activity-bar.open .activity-body { display: block; }
-  .activity-list { max-height: 180px; overflow-y: auto; }
-  .activity-item {
-    display: flex; gap: 10px; align-items: baseline;
-    padding: 7px 14px; border-bottom: 1px solid var(--border);
-    font-size: 11px; line-height: 1.4;
-  }
-  .activity-item:last-child { border-bottom: none; }
-  .activity-time { color: var(--muted); white-space: nowrap; flex-shrink: 0; font-size: 10px; }
-  .activity-lead { color: var(--accent); font-weight: 600; flex-shrink: 0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .activity-desc { color: var(--text); }
-  .activity-empty { padding: 16px 14px; color: var(--muted); font-size: 11px; text-align: center; }
-  .activity-status-badge { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 600; vertical-align: middle; }
-  .activity-status-badge.s-contatado      { background:#7c6aff22; color:#7c6aff; }
-  .activity-status-badge.s-interesse      { background:#fbbf2422; color:#fbbf24; }
-  .activity-status-badge.s-reuniao        { background:#ff6b3522; color:#ff6b35; }
-  .activity-status-badge.s-fechado        { background:#00e5a022; color:#00e5a0; }
-  .activity-status-badge.s-sem-interesse  { background:#ef444422; color:#ef4444; }
-  .activity-status-badge.s-nao-contatado  { background:#6b728022; color:#9ca3af; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dr. Vinícius Scherner — Especialista em Enxaqueca e Cefaleias em Salvador, BA</title>
+  <meta name="description" content="Neurologista especialista em enxaqueca e cefaleias em Salvador, BA. CREMEB 15169 · RQE 8127 · RQE 22317. Atendimento na Neuroliv (Mundo Plaza) e INB Neurologia (Itaigara). Agende pelo WhatsApp." />
+  <meta name="keywords" content="especialista em enxaqueca Salvador, especialista em cefaleias Salvador, neurologista enxaqueca Salvador BA, tratamento enxaqueca Salvador, cefaleia crônica tratamento, neurologista cefaleias complexas, toxina botulínica enxaqueca, Dr Vinícius Scherner, CREMEB 15169" />
+  <link rel="canonical" href="https://drvinicius.com.br/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Dr. Vinícius Scherner — Especialista em Enxaqueca e Cefaleias em Salvador" />
+  <meta property="og:description" content="Neurologista com atuação exclusiva em enxaqueca e cefaleias complexas. Duas unidades em Salvador, BA. Agende sua consulta." />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:image" content="PHOTO-2026-06-06-10-34-27.jpg" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Dr. Vinícius Scherner — Especialista em Enxaqueca em Salvador" />
+  <meta name="twitter:description" content="Neurologista especialista em enxaqueca e cefaleias complexas. Salvador, BA." />
+
+  <!-- JSON-LD: Physician -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Physician",
+    "name": "Dr. Vinícius Scherner Rossi",
+    "description": "Neurologista especialista em enxaqueca e cefaleias complexas em Salvador, BA",
+    "medicalSpecialty": ["Neurology", "Headache Medicine"],
+    "image": "PHOTO-2026-06-06-10-34-27.jpg",
+    "telephone": ["+55-71-99922-3736", "+55-71-99153-2253"],
+    "address": [
+      {
+        "@type": "PostalAddress",
+        "name": "Neuroliv — Empresarial Mundo Plaza",
+        "streetAddress": "Av. Tancredo Neves, 620 — Sala 1513",
+        "addressLocality": "Salvador",
+        "addressRegion": "BA",
+        "postalCode": "41820-020",
+        "addressCountry": "BR"
+      },
+      {
+        "@type": "PostalAddress",
+        "name": "INB Neurologia",
+        "streetAddress": "Av. Antônio Carlos Magalhães, 585 — Sala 803",
+        "addressLocality": "Salvador",
+        "addressRegion": "BA",
+        "postalCode": "41825-907",
+        "addressCountry": "BR"
+      }
+    ],
+    "identifier": [
+      { "@type": "PropertyValue", "name": "CREMEB", "value": "15169" },
+      { "@type": "PropertyValue", "name": "RQE Neurologia", "value": "8127" },
+      { "@type": "PropertyValue", "name": "RQE Neurologia/Dor", "value": "22317" }
+    ],
+    "url": "https://drvinicius.com.br/",
+    "sameAs": []
+  }
+  </script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Variables ─────────────────────────────────── */
+    :root {
+      --red:      #E52C1F;
+      --white:    #FFFFFF;
+      --ice:      #F4F4F4;
+      --glacier:  #B7C5D3;
+      --dark:     #333333;
+      --mid:      #666666;
+      --border:   #E0E0E0;
+      --serif:    'Cormorant Garamond', Georgia, serif;
+      --sans:     'DM Sans', sans-serif;
+    }
+
+    /* ─── Reset ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      color: var(--dark);
+      background: var(--white);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ─── Utility ────────────────────────────────────── */
+    .container { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 96px 0; }
+    .section--ice { background: var(--ice); }
+    .eyebrow {
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 16px;
+    }
+    .rule {
+      width: 40px; height: 2px;
+      background: var(--red);
+      margin-bottom: 32px;
+    }
+
+    /* ─── NAV ────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .nav-brand {
+      display: flex; flex-direction: column; gap: 1px;
+    }
+    .nav-brand-name {
+      font-family: var(--serif);
+      font-size: 17px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: var(--dark);
+    }
+    .nav-brand-sub {
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--mid);
+    }
+    .nav-cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--red);
+      color: var(--white);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 10px 20px;
+      border: none; cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .nav-cta:hover { background: #c4221a; transform: translateY(-1px); }
+    .nav-cta svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    /* ─── HERO ───────────────────────────────────────── */
+    .hero {
+      padding-top: 64px; /* nav height */
+      min-height: 100svh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-left {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 80px 60px 80px 0;
+    }
+    .hero-left .container { padding: 0; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-bottom: 40px;
+      width: fit-content;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--red);
+      flex-shrink: 0;
+    }
+    .hero-h1 {
+      font-family: var(--serif);
+      font-size: clamp(38px, 5vw, 64px);
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      color: var(--dark);
+      margin-bottom: 12px;
+    }
+    .hero-h1 em {
+      font-style: italic;
+      color: var(--red);
+    }
+    .hero-sub {
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--mid);
+      max-width: 420px;
+      line-height: 1.7;
+      margin-bottom: 48px;
+    }
+    .hero-actions { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--red);
+      color: var(--white);
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 16px 32px;
+      border: none; cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+      background: #c4221a;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(229,44,31,0.25);
+    }
+    .btn-primary svg { width: 18px; height: 18px; }
+    .hero-note {
+      font-size: 12px; color: var(--mid);
+      letter-spacing: 0.04em;
+    }
+    .hero-right {
+      position: relative;
+      background: var(--ice);
+      overflow: hidden;
+    }
+    .hero-img-wrap {
+      position: absolute; inset: 0;
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    /* Photo placeholder — replace src with actual photo */
+    .hero-photo {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+    }
+    .hero-photo-placeholder {
+      width: 100%; height: 100%;
+      background: linear-gradient(160deg, #dde4ea 0%, #c9d4dc 60%, #b7c5d3 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px;
+    }
+    .hero-photo-placeholder svg { width: 80px; height: 80px; opacity: 0.3; }
+    .hero-photo-placeholder span {
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--mid); opacity: 0.7;
+    }
+    .hero-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(244,244,244,0.6));
+      height: 180px;
+      pointer-events: none;
+    }
+    .hero-stat-bar {
+      position: absolute; bottom: 32px; left: 32px; right: 32px;
+      display: flex; gap: 1px;
+    }
+    .hero-stat {
+      flex: 1;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px);
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .hero-stat-n {
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--dark);
+      line-height: 1;
+    }
+    .hero-stat-l {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-top: 4px;
+    }
+    /* Decorative line */
+    .hero-left-wrapper {
+      display: flex; align-items: stretch;
+    }
+    .hero-accent-bar {
+      width: 3px; background: var(--red);
+      margin-right: 48px; margin-top: 160px; margin-bottom: 80px;
+      flex-shrink: 0;
+    }
+
+    /* ─── CONDITIONS ─────────────────────────────────── */
+    .conditions-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 56px;
+    }
+    .condition-card {
+      background: var(--white);
+      padding: 32px 24px;
+      transition: background 0.2s;
+      position: relative;
+    }
+    .condition-card:hover { background: var(--ice); }
+    .condition-icon {
+      width: 36px; height: 36px;
+      margin-bottom: 16px;
+      color: var(--glacier);
+    }
+    .condition-name {
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .condition-desc {
+      font-size: 13px;
+      color: var(--mid);
+      line-height: 1.6;
+    }
+    .section-header { max-width: 600px; }
+    .section-h2 {
+      font-family: var(--serif);
+      font-size: clamp(30px, 4vw, 48px);
+      font-weight: 300;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+    }
+    .section-h2 em { font-style: italic; color: var(--red); }
+
+    /* ─── ABOUT ──────────────────────────────────────── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .about-img-wrap {
+      aspect-ratio: 4/5;
+      background: var(--ice);
+      position: relative;
+      overflow: hidden;
+    }
+    .about-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .about-img-placeholder {
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, #e8ecf0 0%, #d0d9e2 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .about-img-placeholder svg { width: 64px; height: 64px; opacity: 0.25; }
+    .about-frame {
+      position: absolute; inset: 16px;
+      border: 1px solid rgba(183,197,211,0.4);
+      pointer-events: none;
+    }
+    .about-text p {
+      font-size: 15px;
+      color: var(--mid);
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+    .about-text p:last-of-type { margin-bottom: 32px; }
+    .about-credentials {
+      display: flex; flex-direction: column; gap: 12px;
+      border-top: 1px solid var(--border);
+      padding-top: 32px;
+    }
+    .credential {
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .credential-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--red);
+      flex-shrink: 0; margin-top: 7px;
+    }
+    .credential-text { font-size: 14px; color: var(--dark); }
+
+    /* ─── TREATMENTS ─────────────────────────────────── */
+    .treatments-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 24px;
+      margin-top: 56px;
+    }
+    .treatment-card {
+      border: 1px solid var(--border);
+      padding: 32px 24px;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+    .treatment-card:hover {
+      border-color: var(--glacier);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+    }
+    .treatment-num {
+      font-family: var(--serif);
+      font-size: 36px;
+      font-weight: 300;
+      color: var(--border);
+      line-height: 1;
+      margin-bottom: 24px;
+      transition: color 0.2s;
+    }
+    .treatment-card:hover .treatment-num { color: var(--glacier); }
+    .treatment-name {
+      font-family: var(--serif);
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+    .treatment-desc {
+      font-size: 13px;
+      color: var(--mid);
+      line-height: 1.6;
+    }
+
+    /* ─── PLAN SELECTOR ──────────────────────────────── */
+    .plan-section {
+      background: var(--dark);
+      padding: 96px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .plan-section::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 80% 50%, rgba(183,197,211,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 10% 80%, rgba(229,44,31,0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .plan-section .eyebrow { color: var(--glacier); }
+    .plan-h2 {
+      font-family: var(--serif);
+      font-size: clamp(30px, 4vw, 52px);
+      font-weight: 300;
+      color: var(--white);
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .plan-h2 em { font-style: italic; color: var(--glacier); }
+    .plan-sub {
+      font-size: 15px;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 56px;
+      max-width: 500px;
+    }
+
+    /* Plan Grid */
+    .plan-pills {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-bottom: 48px;
+    }
+    .plan-pill {
+      display: inline-flex; align-items: center;
+      padding: 10px 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.65);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+      font-family: var(--sans);
+    }
+    .plan-pill:hover {
+      border-color: var(--glacier);
+      color: var(--white);
+      background: rgba(183,197,211,0.1);
+    }
+    .plan-pill.active {
+      border-color: var(--red);
+      color: var(--white);
+      background: rgba(229,44,31,0.15);
+    }
+    .plan-pill.active-both {
+      border-color: var(--glacier);
+      color: var(--white);
+      background: rgba(183,197,211,0.15);
+    }
+
+    /* Result Panel */
+    .plan-result {
+      display: none;
+      animation: fadeUp 0.35s ease forwards;
+    }
+    .plan-result.show { display: block; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .plan-result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .clinic-result-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .clinic-result-card.highlighted {
+      border-color: var(--red);
+      background: rgba(229,44,31,0.08);
+    }
+    .clinic-result-card.highlighted::before {
+      content: 'Seu Plano';
+      position: absolute; top: 0; right: 0;
+      background: var(--red);
+      color: var(--white);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+      padding: 5px 14px;
+    }
+    .clinic-result-name {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .clinic-result-loc {
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--glacier);
+      margin-bottom: 24px;
+    }
+    .clinic-plans-list {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-bottom: 28px;
+    }
+    .clinic-plan-tag {
+      font-size: 11px;
+      padding: 4px 10px;
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.04em;
+    }
+    .clinic-plan-tag.match {
+      background: rgba(229,44,31,0.2);
+      color: var(--white);
+    }
+    .btn-whatsapp {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: #25D366;
+      color: var(--white);
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 13px 24px;
+      width: 100%;
+      justify-content: center;
+      transition: background 0.2s, transform 0.15s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-whatsapp:hover {
+      background: #1ebe5d;
+      transform: translateY(-1px);
+    }
+    .btn-whatsapp svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .plan-particular-msg {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 32px;
+      padding: 20px 24px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+    }
+    .plan-note {
+      margin-top: 24px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── CLINICS ────────────────────────────────────── */
+    .clinics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 56px;
+    }
+    .clinic-card {
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .clinic-header {
+      padding: 32px;
+      background: var(--ice);
+      border-bottom: 1px solid var(--border);
+    }
+    .clinic-logo-area {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .clinic-initial {
+      width: 40px; height: 40px;
+      background: var(--dark);
+      color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 300;
+      flex-shrink: 0;
+    }
+    .clinic-name {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 500;
+    }
+    .clinic-addr {
+      font-size: 13px; color: var(--mid);
+      letter-spacing: 0.04em;
+    }
+    .clinic-body { padding: 32px; }
+    .clinic-plans-heading {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-bottom: 16px;
+    }
+    .clinic-tags {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 28px;
+    }
+    .clinic-tag {
+      font-size: 12px;
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      color: var(--dark);
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── HOW IT WORKS ───────────────────────────────── */
+    .steps { display: flex; gap: 0; margin-top: 56px; }
+    .step {
+      flex: 1;
+      padding: 40px 32px;
+      border-left: 1px solid var(--border);
+      position: relative;
+    }
+    .step:last-child { border-right: 1px solid var(--border); }
+    .step-n {
+      font-family: var(--serif);
+      font-size: 52px;
+      font-weight: 300;
+      color: var(--border);
+      line-height: 1;
+      margin-bottom: 20px;
+    }
+    .step-title {
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .step-desc { font-size: 13px; color: var(--mid); line-height: 1.6; }
+
+    /* ─── FINAL CTA ──────────────────────────────────── */
+    .cta-section {
+      background: var(--red);
+      padding: 80px 0;
+      text-align: center;
+    }
+    .cta-h2 {
+      font-family: var(--serif);
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 300;
+      color: var(--white);
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .cta-sub {
+      font-size: 15px;
+      color: rgba(255,255,255,0.75);
+      margin-bottom: 40px;
+      max-width: 500px;
+      margin-left: auto; margin-right: auto;
+    }
+    .cta-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn-white {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--white);
+      color: var(--red);
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 15px 32px;
+      transition: transform 0.15s, box-shadow 0.2s;
+      cursor: pointer; border: none;
+    }
+    .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.18); }
+    .btn-outline-white {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: transparent;
+      color: var(--white);
+      border: 1px solid rgba(255,255,255,0.5);
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 15px 32px;
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+    }
+    .btn-outline-white:hover { border-color: var(--white); background: rgba(255,255,255,0.1); }
+
+    /* ─── FOOTER ─────────────────────────────────────── */
+    footer {
+      background: var(--dark);
+      padding: 48px 0 32px;
+    }
+    .footer-inner {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      flex-wrap: wrap; gap: 32px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 24px;
+    }
+    .footer-brand-name {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .footer-brand-sub {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+    }
+    .footer-contact a {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: rgba(255,255,255,0.55);
+      margin-bottom: 8px;
+      transition: color 0.2s;
+    }
+    .footer-contact a:hover { color: var(--white); }
+    .footer-bottom {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 8px;
+    }
+    .footer-copy {
+      font-size: 11px; color: rgba(255,255,255,0.25);
+      letter-spacing: 0.04em;
+    }
+    .footer-crm {
+      font-size: 11px; color: rgba(255,255,255,0.25);
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── CLINIC ADDRESS ─────────────────────────────── */
+    .clinic-address-block {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .clinic-address-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--mid);
+      line-height: 1.5;
+    }
+    .clinic-address-row svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+      color: var(--red);
+      opacity: 0.7;
+    }
+    .clinic-map-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-top: 4px;
+      transition: opacity 0.2s, gap 0.2s;
+      opacity: 0.8;
+    }
+    .clinic-map-link:hover { opacity: 1; gap: 9px; }
+    .clinic-map-link svg { flex-shrink: 0; }
+
+    /* ─── ANIMATIONS ─────────────────────────────────── */
+
+    /* Hero entrance */
+    @keyframes heroFadeUp {
+      from { opacity: 0; transform: translateY(32px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes heroFadeRight {
+      from { opacity: 0; transform: translateX(-20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.94); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulseRed {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(229,44,31,0.35); }
+      50%       { box-shadow: 0 0 0 8px rgba(229,44,31,0); }
+    }
+    @keyframes accentGrow {
+      from { transform: scaleY(0); }
+      to   { transform: scaleY(1); }
+    }
+    @keyframes countUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Nav animate in */
+    nav { animation: slideDown 0.5s ease both; }
+
+    /* Hero badge dot pulse */
+    .hero-badge-dot { animation: pulseRed 2.4s ease-in-out infinite; }
+
+    /* Hero content stagger */
+    .hero-badge   { animation: heroFadeUp 0.7s 0.2s ease both; }
+    .hero-h1      { animation: heroFadeUp 0.7s 0.35s ease both; }
+    .hero-sub     { animation: heroFadeUp 0.7s 0.5s ease both; }
+    .hero-actions { animation: heroFadeUp 0.7s 0.65s ease both; }
+
+    /* Accent bar */
+    .hero-accent-bar {
+      transform-origin: top;
+      animation: accentGrow 0.9s 0.4s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    /* Hero right image */
+    .hero-right { animation: scaleIn 1s 0.15s ease both; }
+
+    /* Stat bar items */
+    .hero-stat:nth-child(1) { animation: countUp 0.5s 0.9s ease both; }
+    .hero-stat:nth-child(2) { animation: countUp 0.5s 1.05s ease both; }
+    .hero-stat:nth-child(3) { animation: countUp 0.5s 1.2s ease both; }
+
+    /* Scroll reveals */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1),
+                  transform 0.7s cubic-bezier(0.16,1,0.3,1);
+    }
+    .reveal.in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Condition cards — lift on hover with color accent */
+    .condition-card {
+      transition: background 0.25s, transform 0.25s cubic-bezier(0.16,1,0.3,1),
+                  box-shadow 0.25s;
+    }
+    .condition-card:hover {
+      background: var(--ice);
+      transform: translateY(-5px);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.07);
+    }
+    .condition-card:hover .condition-icon { color: var(--red); transition: color 0.25s; }
+
+    /* Treatment cards */
+    .treatment-card { transition: border-color 0.25s, transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s; }
+
+    /* Clinic cards */
+    .clinic-card {
+      transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s;
+    }
+    .clinic-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 56px rgba(0,0,0,0.09);
+    }
+
+    /* Plan pills */
+    .plan-pill { transition: all 0.2s cubic-bezier(0.16,1,0.3,1); }
+    .plan-pill:hover { transform: translateY(-2px); }
+
+    /* Step hover */
+    .step { transition: background 0.2s; }
+    .step:hover { background: rgba(229,44,31,0.02); }
+    .step:hover .step-n { color: rgba(229,44,31,0.2); transition: color 0.3s; }
+
+    /* Buttons micro interaction */
+    .btn-primary, .btn-white, .btn-outline-white, .btn-whatsapp, .nav-cta {
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after, .btn-white::after, .nav-cta::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.15);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+    .btn-primary:hover::after, .btn-white:hover::after, .nav-cta:hover::after {
+      transform: translateX(0);
+    }
+
+    /* About image parallax hint */
+    .about-img-wrap { overflow: hidden; }
+    .about-img-wrap img {
+      transition: transform 0.6s cubic-bezier(0.16,1,0.3,1);
+    }
+    .about-img-wrap:hover img { transform: scale(1.04); }
+
+    /* ─── RESPONSIVE ─────────────────────────────────── */
+    @media (max-width: 1024px) {
+      .treatments-grid { grid-template-columns: repeat(3, 1fr); }
+      .conditions-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .hero-left { padding: 60px 24px 40px; }
+      .hero-accent-bar { display: none; }
+      .hero-right { min-height: 360px; }
+      .hero-stat-bar { gap: 8px; flex-wrap: wrap; }
+      .about-grid { grid-template-columns: 1fr; gap: 40px; }
+      .about-img-wrap { aspect-ratio: 4/3; }
+      .clinics-grid { grid-template-columns: 1fr; }
+      .conditions-grid { grid-template-columns: repeat(2, 1fr); }
+      .treatments-grid { grid-template-columns: repeat(2, 1fr); }
+      .steps { flex-direction: column; }
+      .step { border-left: none; border-top: 1px solid var(--border); }
+      .step:last-child { border-right: none; }
+      nav .nav-cta { display: none; }
+    }
+    @media (max-width: 480px) {
+      .conditions-grid { grid-template-columns: 1fr; }
+      .treatments-grid { grid-template-columns: 1fr; }
+      .section { padding: 64px 0; }
+    }
+
+    /* Smooth scroll offset for fixed nav */
+    :target { scroll-margin-top: 80px; }
+  </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-title">⚡ DASHBOARD DE PROSPECÇÃO</div>
-  <div class="header-meta" id="header-meta">Vilas do Atlântico · Lauro de Freitas, BA</div>
-</div>
-
-<div class="stats-bar">
-  <div class="stat">
-    <span class="stat-num green" id="stat-total">0</span>
-    <span class="stat-label">Total Leads</span>
-    <div class="stat-progress"><div class="stat-progress-fill green-fill" id="prog-total"></div></div>
-  </div>
-  <div class="stat">
-    <span class="stat-num yellow" id="stat-p1">0</span>
-    <span class="stat-label">Alta Prioridade</span>
-    <div class="stat-progress"><div class="stat-progress-fill yellow-fill" id="prog-p1"></div></div>
-  </div>
-  <div class="stat">
-    <span class="stat-num orange" id="stat-contatados">0</span>
-    <span class="stat-label">Contatados</span>
-    <div class="stat-progress"><div class="stat-progress-fill orange-fill" id="prog-contatados"></div></div>
-  </div>
-  <div class="stat">
-    <span class="stat-num purple" id="stat-fechados">0</span>
-    <span class="stat-label">Fechados</span>
-    <div class="stat-progress"><div class="stat-progress-fill purple-fill" id="prog-fechados"></div></div>
-  </div>
-</div>
-
-<div class="pipeline-bar" id="pipelineBar">
-  <span class="pipeline-label">Pipeline</span>
-  <div class="pipeline-track" id="pipelineTrack"></div>
-  <div class="pipeline-legend" id="pipelineLegend"></div>
-</div>
-
-<div class="activity-bar" id="activityBar">
-  <div class="activity-header" onclick="toggleActivity()">
-    <span class="activity-dot" id="activityDot"></span>
-    <span class="activity-title">Atividade Recente</span>
-    <button class="activity-refresh" onclick="event.stopPropagation(); loadHistory()" title="Atualizar">↻ atualizar</button>
-    <span class="activity-chevron">▼</span>
-  </div>
-  <div class="activity-body">
-    <div class="activity-list" id="activityList">
-      <div class="activity-empty">Carregando...</div>
-    </div>
-  </div>
-</div>
-
-<div class="toolbar">
-  <div class="search-wrapper">
-    <span class="search-icon">🔍</span>
-    <input type="text" class="search-box" id="searchInput" placeholder="Buscar negócio..." oninput="filterLeads(this.value)" />
-    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Limpar">×</button>
-  </div>
-  <div class="filter-pills">
-    <button class="filter-btn active" onclick="filterNicho('todos', this)">Todos</button>
-    <button class="filter-btn" onclick="filterNicho('restaurante', this)">🍽️ Food</button>
-    <button class="filter-btn" onclick="filterNicho('estetica', this)">💆 Estética</button>
-    <button class="filter-btn" onclick="filterNicho('saude', this)">🏥 Saúde</button>
-    <button class="filter-btn" onclick="filterNicho('academia', this)">💪 Fitness</button>
-    <button class="filter-btn" onclick="filterNicho('salao', this)">✂️ Beleza</button>
-    <button class="filter-btn" onclick="filterNicho('pet', this)">🐾 Pet</button>
-    <button class="filter-btn" onclick="filterNicho('imoveis', this)">🏠 Imóveis</button>
-    <button class="filter-btn" onclick="filterNicho('educacao', this)">🎓 Educação</button>
-    <button class="filter-btn" onclick="filterNicho('moda', this)">👗 Moda</button>
-    <button class="filter-btn" onclick="filterNicho('juridico', this)">⚖️ Jurídico</button>
-  </div>
-  <button class="export-btn" onclick="exportCSV()">↓ CSV</button>
-</div>
-
-<div class="main">
-  <div class="stage-sidebar" id="stageSidebar"></div>
-  <div class="table-section" id="tableSection"></div>
-  <div class="detail-panel" id="detailPanel">
-    <button class="mobile-close-btn" onclick="closeMobilePanel()">✕ Fechar</button>
-    <div class="detail-empty" id="detailEmpty">
-      <div class="detail-empty-icon">←</div>
-      <div class="detail-empty-text">Selecione um lead para editar</div>
-    </div>
-    <div class="detail-content" id="detailContent"></div>
-  </div>
-</div>
-<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobilePanel()"></div>
-
-<div class="saved-toast" id="toast">✓ Salvo com sucesso</div>
-
-<script>
-// ============================================================
-// DATA — 40 leads mapeados
-// ============================================================
-const nichos = [
-  { id: 'restaurante', name: 'Food & Restaurantes', icon: '🍽️', color: '#ff6b35' },
-  { id: 'estetica',    name: 'Clínicas Estéticas',  icon: '💆', color: '#e879f9' },
-  { id: 'saude',       name: 'Saúde & Nutrição',    icon: '🏥', color: '#38bdf8' },
-  { id: 'academia',    name: 'Fitness & Academia',   icon: '💪', color: '#00e5a0' },
-  { id: 'salao',       name: 'Beleza & Salão',       icon: '✂️', color: '#fbbf24' },
-  { id: 'pet',         name: 'Pet Shop & Vet',       icon: '🐾', color: '#a78bfa' },
-  { id: 'imoveis',     name: 'Imóveis',              icon: '🏠', color: '#60a5fa' },
-  { id: 'educacao',    name: 'Educação & Cursos',    icon: '🎓', color: '#34d399' },
-  { id: 'moda',        name: 'Moda & Varejo',        icon: '👗', color: '#f472b6' },
-  { id: 'juridico',    name: 'Jurídico & Consultoria', icon: '⚖️', color: '#fb923c' },
-];
-
-const allLeads = [
-  // RESTAURANTES
-  { id:1, nicho:'restaurante', name:'Restaurante Donana', phone:'(71) 3379-4364', rating:4.6, reviews:3033, addr:'Av. Praia de Itapuã, QD04 LT06 - Vilas', priority:'P1', website:false, obs:'3K+ reviews. Sem site. Oportunidade enorme de tráfego pago.', status:'nao-contatado', instagram:'https://instagram.com/donanarestaurante', maps:'https://maps.google.com/?cid=2179164227317637632' },
-  { id:2, nicho:'restaurante', name:'Ki-Mukeka', phone:'(71) 3369-5381', rating:4.6, reviews:1453, addr:'R. Praia do Tubarão, 70 - Vilas', priority:'P1', website:false, obs:'Especialidade em moqueca. Grande volume de avaliações. Rede com 34K seguidores no IG.', status:'nao-contatado', instagram:'https://instagram.com/kimukeka', maps:'https://maps.google.com/?cid=2402224636865959270' },
-  { id:3, nicho:'restaurante', name:'Mariposa - Vilas do Atlântico', phone:'(71) 3018-4690', rating:4.4, reviews:2813, addr:'Av. Praia de Itapuã, s/n - Vilas', priority:'P1', website:true, obs:'Bar + música ao vivo. 38K seguidores no Instagram. Tem site mariposa.com.br.', status:'nao-contatado', instagram:'https://instagram.com/mariposavilas', site:'https://www.mariposa.com.br', maps:'https://maps.google.com/?cid=6016212904337810409' },
-  { id:4, nicho:'restaurante', name:'Camarão Vilas', phone:'(71) 4009-4949', rating:4.5, reviews:1597, addr:'Av. Praia de Itapuã, 805 - Vilas', priority:'P1', website:false, obs:'1.6K reviews. Tem Linktree com Instagram e Facebook linkados.', status:'nao-contatado', site:'https://linktr.ee/camaraovilas', maps:'https://maps.google.com/?cid=4300696539975391504' },
-  { id:5, nicho:'restaurante', name:'Oscarito Restaurant', phone:'(71) 4113-1306', rating:4.5, reviews:1097, addr:'Al. Praia do Tubarão, QA12 - Vilas', priority:'P2', website:false, obs:'Churrasco e buffet. Bom volume.', status:'nao-contatado', maps:'https://maps.google.com/?cid=2732622065490968672' },
-
-  // ESTÉTICA
-  { id:6, nicho:'estetica', name:'BellaClin Vilas', phone:'(71) 3508-5704', rating:4.8, reviews:29, addr:'R. Itagi, 599 Ed. Mediterrâneo - Pitangueiras', priority:'P1', website:true, obs:'Medicina estética. Nicho de ticket alto. Ativo digitalmente.', status:'nao-contatado', site:'https://dietadetox1000.blogspot.com', maps:'https://maps.google.com/?cid=8820280970661337207' },
-  { id:7, nicho:'estetica', name:'Royal Face Clínica', phone:'(71) 98433-2665', rating:4.7, reviews:40, addr:'Av. Praia de Itapuã, 805 - Vilas', priority:'P1', website:true, obs:'Franquia com site próprio. Potencial de escalar campanhas.', status:'nao-contatado', site:'https://royalface.com.br/unidade/lauro-de-freitas-ba/', maps:'https://maps.google.com/?cid=5118448392387256726' },
-  { id:8, nicho:'estetica', name:'Prime S Clinic', phone:'(71) 99169-0380', rating:5.0, reviews:11, addr:'Av. Luiz Tarquínio Pontes, 2580 - Buraquinho', priority:'P2', website:false, obs:'5 estrelas. Pequena mas qualidade alta.', status:'nao-contatado', maps:'https://maps.google.com/?cid=15909270210003247780' },
-  { id:9, nicho:'estetica', name:'Clínica Angellis', phone:'(71) 99988-5464', rating:5.0, reviews:5, addr:'Estação Villas Shopping - Av. Priscila Dutra, 389', priority:'P2', website:false, obs:'Nova, 5 estrelas, boa localização no shopping.', status:'nao-contatado', maps:'https://maps.google.com/?cid=7448861896042751287' },
-  { id:10, nicho:'estetica', name:'Revitalle Clinic', phone:'(71) 3024-3935', rating:4.3, reviews:29, addr:'Av. Praia de Itapuã, 381 - Vilas', priority:'P3', website:false, obs:'Reviews mistas. Precisam melhorar presença online.', status:'nao-contatado', maps:'https://maps.google.com/?cid=2402224636865959270' },
-
-  // SAÚDE
-  { id:11, nicho:'saude', name:'Bem Sorriso Implantes', phone:'(71) 3015-5484', rating:5.0, reviews:309, addr:'Av. Praia de Itapuã, 319 - Vilas', priority:'P1', website:true, obs:'309 reviews, 5 estrelas! Tem site clinicabemsorriso.com.br e Instagram @bemsorrisovilas.', status:'nao-contatado', instagram:'https://instagram.com/bemsorrisovilas', site:'https://clinicabemsorriso.com.br/vilas-do-atlantico/', maps:'https://maps.google.com/?cid=5571092489970760103' },
-  { id:12, nicho:'saude', name:'Dentare Clínica Odontológica', phone:'(71) 99212-0622', rating:5.0, reviews:167, addr:'Av. Praia de Itapuã, 1670 - Vilas', priority:'P1', website:true, obs:'Implantes + aparelhos. 5 estrelas. Tem Facebook e site.', status:'nao-contatado', site:'https://www.facebook.com/dentareodonto/', maps:'https://maps.google.com/?cid=14430778771240994664' },
-  { id:13, nicho:'saude', name:'Villas Dental Clinic', phone:'(71) 3369-0414', rating:4.9, reviews:123, addr:'Av. Praia de Itapuã, 408 - Vilas', priority:'P1', website:true, obs:'Tem site próprio villasdental.com.br com tour 360°. Alta tecnologia.', status:'nao-contatado', site:'https://villasdental.com.br/', maps:'https://maps.google.com/?cid=5118448392387256726' },
-  { id:14, nicho:'saude', name:'Jeice Lima Nutricionista', phone:'(71) 98403-0485', rating:5.0, reviews:182, addr:'Av. Luiz Tarquínio Pontes, 2580 - Buraquinho', priority:'P1', website:false, obs:'182 reviews! Forte presença no Instagram com desafios e conteúdo. Excelente para escalar.', status:'nao-contatado', instagram:'https://instagram.com/nutrijeicelima', maps:'https://maps.google.com/?cid=8820280970661337207' },
-  { id:15, nicho:'saude', name:'Michelle Guerra Nutricionista', phone:'(71) 98159-8999', rating:5.0, reviews:15, addr:'R. Praia de Ondina, 50 - Vilas', priority:'P2', website:false, obs:'Excelentes avaliações. Boa para campanhas de captação de pacientes.', status:'nao-contatado', maps:'https://maps.google.com/?cid=5571092489970760103' },
-  { id:16, nicho:'saude', name:'Infinity Odonto Vilas', phone:'(71) 98882-3474', rating:4.9, reviews:29, addr:'Av. Luiz Tarquínio Pontes, 2580 - Vilas', priority:'P2', website:false, obs:'Clareamento dental em destaque nas avaliações.', status:'nao-contatado', maps:'https://maps.google.com/?cid=2179164227317637632' },
-  { id:17, nicho:'saude', name:'Nutricionista Cyntia Câmara', phone:'(71) 99919-4915', rating:5.0, reviews:5, addr:'Av. Praia de Itapuã, 1686 - Vilas', priority:'P2', website:false, obs:'Nutrição integrativa + acupuntura. Ticket diferenciado.', status:'nao-contatado', maps:'https://maps.google.com/?cid=14430778771240994664' },
-
-  // ACADEMIA
-  { id:18, nicho:'academia', name:'Studio Kore - Funcional', phone:'(71) 99152-5662', rating:4.8, reviews:47, addr:'Av. Praia de Itapuã, 1808 - Vilas', priority:'P1', website:true, obs:'Studio premium. Franquia com 87K seguidores no IG nacional. Unidade local @kore.bahia.vilasdoatlantico.', status:'nao-contatado', instagram:'https://instagram.com/kore.bahia.vilasdoatlantico', site:'https://studiokore.com.br/', maps:'https://maps.google.com/?cid=14430778771240994664' },
-  { id:19, nicho:'academia', name:'Academia Vilas Fitness', phone:'(71) 99907-7895', rating:4.7, reviews:180, addr:'R. Praia de Ondina, 50 - Vilas', priority:'P1', website:true, obs:'Academia grande. 180 reviews. Instagram @academiavilasfitness_. Espaço kids = diferencial.', status:'nao-contatado', instagram:'https://instagram.com/academiavilasfitness_', site:'https://www.academiavilasfitness.com/home/', maps:'https://maps.google.com/?cid=5571092489970760103' },
-  { id:20, nicho:'academia', name:'Rede Fluir - Vilas', phone:'(71) 3024-3021', rating:4.8, reviews:82, addr:'Av. Priscila Dutra, S/N - Buraquinho', priority:'P2', website:false, obs:'Fisioterapia + fitness. Ticket recorrente alto.', status:'nao-contatado', maps:'https://maps.google.com/?cid=15909270210003247780' },
-
-  // SALÃO
-  { id:21, nicho:'salao', name:'Villas Coiffeur', phone:'(71) 3508-0796', rating:4.7, reviews:107, addr:'Av. Priscila Dutra, 389 - Buraquinho', priority:'P1', website:false, obs:'107 reviews. Público feminino premium. Presença no Instagram.', status:'nao-contatado', instagram:'https://instagram.com/villascoiffeurcentrodebeleza', maps:'https://maps.google.com/?cid=6316088598018556811' },
-  { id:22, nicho:'salao', name:'Estação de Beleza Vilas', phone:'(71) 3289-4070', rating:4.7, reviews:85, addr:'R. Praia de Pajussara, 348 - Vilas', priority:'P1', website:false, obs:'85 reviews. Tem Instagram ativo @estacaodebelezavilas. Salão completo.', status:'nao-contatado', instagram:'https://instagram.com/estacaodebelezavilas', maps:'https://maps.google.com/?cid=10381152542829611920' },
-  { id:23, nicho:'salao', name:'Palazzo Spazio di Belleza', phone:'(71) 3287-1357', rating:4.5, reviews:141, addr:'Av. Praia de Itapuã, 571 - Vilas', priority:'P2', website:false, obs:'141 reviews. Atendimento VIP conforme avaliações.', status:'nao-contatado', maps:'https://maps.google.com/?cid=18005118390911426139' },
-  { id:24, nicho:'salao', name:'Rosenildes Mendes Cabeleireira', phone:'(71) 3251-9153', rating:4.6, reviews:105, addr:'Av. Praia de Itapuã, 1861 - Vilas', priority:'P2', website:false, obs:'Especialista em loiras. Clientela fiel.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6016212904337810409' },
-  { id:25, nicho:'salao', name:'Lu Castro Studio de Beleza', phone:'(71) 99317-3415', rating:4.7, reviews:48, addr:'Av. Luiz Tarquínio Pontes, 2318 - Vilas', priority:'P2', website:false, obs:'Avaliações mistas. Potencial de melhora com tráfego + reputação.', status:'nao-contatado', maps:'https://maps.google.com/?cid=15909270210003247780' },
-
-  // PET
-  { id:26, nicho:'pet', name:'Veterinary Clinic Vilas do Atlântico', phone:'(71) 3379-0092', rating:4.8, reviews:170, addr:'R. Praia do Mucuripe, 26 - Vilas', priority:'P1', website:false, obs:'170 reviews, 4.8. Nicho pet com ticket recorrente alto.', status:'nao-contatado', maps:'https://maps.google.com/?cid=14430778771240994664' },
-  { id:27, nicho:'pet', name:'Pettep', phone:'(71) 99695-7413', rating:4.8, reviews:50, addr:'Av. Praia de Itapuã, 374 - Vilas', priority:'P1', website:false, obs:'Pet shop + clínica. 4.8 estrelas. 11K seguidores no IG @pettepbahia. Muito ativo.', status:'nao-contatado', instagram:'https://instagram.com/pettepbahia', maps:'https://maps.google.com/?cid=5571092489970760103' },
-  { id:28, nicho:'pet', name:'Pet Vilas', phone:'(71) 99295-0648', rating:4.6, reviews:233, addr:'R. Ana C. B. Dias - Miragem', priority:'P2', website:false, obs:'233 reviews. Volume alto. Reviews mistas — oportunidade de posicionamento.', status:'nao-contatado', maps:'https://maps.google.com/?cid=2402224636865959270' },
-  { id:29, nicho:'pet', name:'Dr. Zoo & Cia Veterinária 24h', phone:'(71) 98796-5529', rating:4.3, reviews:267, addr:'R. Praia de Pajussara, 106 - Vilas', priority:'P2', website:false, obs:'24h. Alto volume mas avaliações variadas.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6016212904337810409' },
-
-  // IMÓVEIS
-  { id:30, nicho:'imoveis', name:'Silvia Porto Imóveis', phone:'(71) 99675-8989', rating:4.8, reviews:24, addr:'Av. Praia de Itapuã, 48 - Vilas', priority:'P1', website:false, obs:'Corretora individual. Tráfego pago para captação de leads imob.', status:'nao-contatado', maps:'https://maps.google.com/?cid=14430778771240994664' },
-  { id:31, nicho:'imoveis', name:'Linnda Imobiliária', phone:'(71) 99969-3434', rating:4.3, reviews:15, addr:'Av. Praia de Itapuã, 1067 - Vilas', priority:'P2', website:false, obs:'Imobiliária local. Ticket alto por transação.', status:'nao-contatado', maps:'https://maps.google.com/?cid=5571092489970760103' },
-  { id:32, nicho:'imoveis', name:'Tadeu Carvalho Corretor', phone:'(71) 99185-1348', rating:4.0, reviews:4, addr:'R. Praia de Itapema - Vilas', priority:'P2', website:false, obs:'Corretor individual. Pode investir em leads qualificados.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6016212904337810409' },
-
-  // EDUCAÇÃO
-  { id:33, nicho:'educacao', name:'Badermann Escola de Música', phone:'(71) 99272-9658', rating:5.0, reviews:202, addr:'Shopping Villas Boulevard - Av. Praia de Itapuã, 1137', priority:'P1', website:false, obs:'5 estrelas, 202 reviews! Forte Instagram @badermann.musica.', status:'nao-contatado', instagram:'https://instagram.com/badermann.musica', maps:'https://maps.google.com/?cid=7448861896042751287' },
-  { id:34, nicho:'educacao', name:'Kidsland Creche Escola', phone:'(71) 99608-1136', rating:5.0, reviews:64, addr:'R. Maria dos Réis Silva, 312 - Miragem', priority:'P1', website:false, obs:'5 estrelas. Escola infantil premium. 5.3K seguidores @kidslandvilas. Público de alta renda.', status:'nao-contatado', instagram:'https://instagram.com/kidslandvilas', maps:'https://maps.google.com/?cid=14430778771240994664' },
-  { id:35, nicho:'educacao', name:'Vilas Cursos (Number One)', phone:'—', rating:4.8, reviews:31, addr:'Av. Praia de Pajussara, 294 - Vilas', priority:'P2', website:false, obs:'Franquia de inglês. Anúncios para matrículas.', status:'nao-contatado', maps:'https://maps.google.com/?cid=5571092489970760103' },
-  { id:36, nicho:'educacao', name:'Escola Lápis Vilas', phone:'(71) 98430-6639', rating:4.8, reviews:19, addr:'R. Maria dos Réis Silva, 152 - Miragem', priority:'P2', website:false, obs:'Berçário e Fundamental. Boa estrutura pedagógica.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6316088598018556811' },
-
-  // MODA
-  { id:37, nicho:'moda', name:'MSTORE BA', phone:'(71) 99607-1116', rating:5.0, reviews:15, addr:'Av. Praia de Itapuã, 7 - Vilas', priority:'P1', website:false, obs:'Moda masculina premium. 5 estrelas. Instagram ativo.', status:'nao-contatado', maps:'https://maps.google.com/?cid=2179164227317637632' },
-  { id:38, nicho:'moda', name:'Loja Oyá Let\'sGo', phone:'(71) 99677-9492', rating:4.9, reviews:11, addr:'Av. Praia de Itapuã, 935 - Vilas', priority:'P1', website:false, obs:'Moda feminina. 4.9 estrelas. Peças exclusivas.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6016212904337810409' },
-  { id:39, nicho:'moda', name:'Vivi Moda Íntima', phone:'(71) 98349-6325', rating:4.8, reviews:13, addr:'Av. Praia de Itapuã, 248 - Vilas', priority:'P2', website:false, obs:'Lingerie. Cliente fiel conforme reviews.', status:'nao-contatado', maps:'https://maps.google.com/?cid=18005118390911426139' },
-
-  // JURÍDICO
-  { id:40, nicho:'juridico', name:'Alvarez & Borba Advocacia', phone:'(71) 99333-7181', rating:5.0, reviews:39, addr:'Empresarial Atlântico - R. Itagi - Vilas', priority:'P1', website:false, obs:'Especialidade digital: recuperação de contas Instagram/TikTok. Público nichado.', status:'nao-contatado', maps:'https://maps.google.com/?cid=5118448392387256726' },
-  { id:41, nicho:'juridico', name:'Tatiane Costa Advocacia', phone:'(71) 99621-4242', rating:5.0, reviews:51, addr:'R. Praia de Pajussara, 294 - Vilas', priority:'P1', website:false, obs:'51 reviews, 5 estrelas. Advocacia consumerista. Tráfego para captação.', status:'nao-contatado', maps:'https://maps.google.com/?cid=14430778771240994664' },
-  { id:42, nicho:'juridico', name:'Carvalho Advocacia', phone:'(71) 99184-7649', rating:5.0, reviews:11, addr:'Estr. Min. Antônio Carlos Magalhães, 447 - Buraquinho', priority:'P2', website:false, obs:'Família e patrimonial. Bom ticket médio.', status:'nao-contatado', maps:'https://maps.google.com/?cid=6316088598018556811' },
-];
-
-// ============================================================
-// CONFIG
-// ============================================================
-// Troque pela URL do seu backend no Railway após o deploy:
-const API_URL = (window.PROSPEC_API_URL || 'https://script.google.com/macros/s/AKfycbx6Z5oKbs2b_-jw8vTipr4IL5qD4RJJMxyRLsP-GgAZPsLpQu1sFO5FaZVJqBUJ90s8/exec').replace(/\/$/, '');
-
-// ============================================================
-// STATE
-// ============================================================
-let leads = JSON.parse(localStorage.getItem('prospec_leads') || 'null') ||
-  allLeads.map(l => ({...l, customObs: '', customStatus: l.status, customPriority: l.priority}));
-let selectedId = null;
-let currentFilter = 'todos';
-let searchQuery = '';
-let currentStage = 'todos';
-let _historyInterval = null;
-
-function saveLeads() {
-  localStorage.setItem('prospec_leads', JSON.stringify(leads));
-}
-function getLead(id) { return leads.find(l => l.id === id); }
-
-// ── API helpers ───────────────────────────────────────────────
-async function apiGet(path) {
-  if (!API_URL) return null;
-  try {
-    const r = await fetch(API_URL + path);
-    if (!r.ok) return null;
-    return await r.json();
-  } catch { return null; }
-}
-
-async function apiPost(body) {
-  if (!API_URL) return null;
-  try {
-    const r = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) return null;
-    return await r.json();
-  } catch { return null; }
-}
-
-// ── Init: carrega leads da API (com fallback para localStorage) ──
-async function initLeads() {
-  if (!API_URL) return; // sem API configurada — usa localStorage
-  const data = await apiGet('?action=leads');
-  if (!data) return;
-  // Mapeia para o formato esperado pelo frontend
-  leads = data.map(l => ({
-    ...l,
-    customObs:      l.customObs      ?? '',
-    customStatus:   l.customStatus   ?? l.status,
-    customPriority: l.customPriority ?? l.priority,
-  }));
-  saveLeads(); // atualiza cache local
-  renderTable();
-  renderStageSidebar();
-  updateStats();
-  renderPipeline();
-  document.getElementById('activityDot').classList.remove('offline');
-}
-
-// ── Activity log ──────────────────────────────────────────────
-function toggleActivity() {
-  document.getElementById('activityBar').classList.toggle('open');
-  if (document.getElementById('activityBar').classList.contains('open')) {
-    loadHistory();
-  }
-}
-
-const STATUS_LABELS = {
-  'nao-contatado': 'Não contatado',
-  'contatado':     'Contatado',
-  'interesse':     'Demonstrou interesse',
-  'reuniao':       'Reunião agendada',
-  'fechado':       'Fechado ✓',
-  'sem-interesse': 'Sem interesse',
-};
-
-async function loadHistory() {
-  if (!API_URL) {
-    document.getElementById('activityList').innerHTML =
-      '<div class="activity-empty">Configure API_URL para ver o histórico.</div>';
-    return;
-  }
-  const data = await apiGet('?action=history&limit=25');
-  const list = document.getElementById('activityList');
-  if (!data || data.length === 0) {
-    list.innerHTML = '<div class="activity-empty">Nenhuma alteração registrada ainda.</div>';
-    return;
-  }
-  list.innerHTML = data.map(h => {
-    const dt = new Date(h.changed_at + 'Z');
-    const time = dt.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    let desc = '';
-    if (h.field === 'status') {
-      const label = STATUS_LABELS[h.new_value] || h.new_value;
-      const cls = 's-' + h.new_value;
-      desc = `status → <span class="activity-status-badge ${cls}">${label}</span>`;
-    } else if (h.field === 'prioridade') {
-      desc = `prioridade → <strong>${h.new_value}</strong>`;
-    } else {
-      desc = `anotação atualizada`;
-    }
-    return `<div class="activity-item">
-      <span class="activity-time">${time}</span>
-      <span class="activity-lead" title="${h.lead_name}">${h.lead_name}</span>
-      <span class="activity-desc">${desc}</span>
-    </div>`;
-  }).join('');
-}
-
-// ============================================================
-// SCRIPTS
-// ============================================================
-const scripts = {
-  restaurante: (name) => `Oi! Tudo bem? Encontrei o ${name} aqui perto de mim, em Vilas do Atlântico, e vi que vocês têm ótimas avaliações no Google. 🔥
-
-Sou gestor de tráfego e trabalho com anúncios no Meta e Google para restaurantes da região. Vi que dá pra aumentar bastante o movimento de vocês com campanhas bem segmentadas.
-
-Posso te mostrar como funciona sem compromisso? Quando seria um bom horário pra conversar?`,
-  estetica: (name) => `Oi! Vi o ${name} no Google Maps e fiquei impressionado com as avaliações — parabéns pelo serviço! 🎉
-
-Trabalho com tráfego pago para clínicas estéticas aqui em Lauro de Freitas. Com anúncios no Meta/Instagram, muitas clínicas que atendo conseguem lotar a agenda em poucos dias.
-
-Posso fazer uma análise gratuita do potencial de vocês? É rápido e sem compromisso. 💬`,
-  saude: (name) => `Oi! Encontrei o ${name} no Google Maps e fiquei impressionado com o número de avaliações positivas!
-
-Sou especialista em tráfego pago para clínicas e profissionais de saúde aqui na região de Vilas do Atlântico. Trabalho com anúncios no Google Ads e Meta para captação de novos pacientes.
-
-Você teria interesse em conhecer como funciona? Posso mostrar resultados de outros clientes da área. 📊`,
-  academia: (name) => `Oi! Tudo bem? Vi o ${name} no Google com ótimas avaliações e queria bater um papo rápido.
-
-Trabalho com tráfego pago para academias e studios de fitness. Campanhas bem feitas conseguem atrair novos alunos de forma constante, principalmente no período de mudanças de hábito.
-
-Posso fazer uma análise gratuita do potencial de vocês? Tem 10 minutinhos pra conversar? 💪`,
-  salao: (name) => `Oi! Vi o ${name} aqui em Vilas do Atlântico com ótimas avaliações. Parabéns pelo trabalho!
-
-Sou gestor de tráfego especializado em salões de beleza. Com anúncios no Instagram e Facebook, consigo atrair clientes novos de forma consistente pra quem ainda não apareceu nas redes.
-
-Você teria interesse em conhecer como seria pra vocês? Faço uma análise gratuita sem compromisso. ✂️`,
-  pet: (name) => `Oi! Vi o ${name} no Google Maps com ótimas avaliações! 🐾
-
-Trabalho com tráfego pago para pet shops e clínicas veterinárias aqui em Lauro de Freitas. É um nicho que responde muito bem a anúncios no Facebook/Instagram, especialmente para serviços de banho, tosa e consultas.
-
-Posso te mostrar como funciona? É rápido e sem compromisso. 😊`,
-  imoveis: (name) => `Oi! Tudo bem? Encontrei o ${name} no Google Maps e queria conversar sobre uma oportunidade.
-
-Trabalho com tráfego pago para corretores e imobiliárias. Com Google Ads e Meta, consigo gerar leads qualificados de pessoas buscando imóveis na região de Vilas do Atlântico.
-
-Você teria interesse em conhecer? Posso mostrar como funciona em 15 minutos. 🏠`,
-  educacao: (name) => `Oi! Vi o ${name} no Google Maps — nota incrível e ótimas avaliações! 🎓
-
-Trabalho com tráfego pago para escolas e cursos. No período de matrículas (jan, fev, jul/ago), campanhas bem feitas fazem uma diferença enorme na captação de alunos.
-
-Posso fazer uma análise gratuita do potencial de vocês? Quando seria um bom momento pra conversar?`,
-  moda: (name) => `Oi! Vi o ${name} aqui em Vilas do Atlântico com ótimas avaliações! 👗
-
-Trabalho com tráfego pago para lojas de moda. Com anúncios no Instagram e Facebook, muitas lojas da região conseguem aumentar bastante o movimento presencial e as vendas.
-
-Você teria interesse em saber como funciona? Posso fazer uma análise rápida e sem compromisso. 💬`,
-  juridico: (name) => `Oi! Vi o ${name} no Google com excelente reputação — parabéns pelo trabalho!
-
-Trabalho com tráfego pago para escritórios de advocacia. Com Google Ads bem configurado, é possível aparecer para pessoas que estão buscando exatamente o seu serviço na região.
-
-Posso apresentar como funciona? É rápido, sem compromisso, e já trabalhei com outros profissionais da área. ⚖️`,
-};
-
-// ============================================================
-// RENDER
-// ============================================================
-function renderStars(rating) {
-  let html = '';
-  for (let i = 1; i <= 5; i++) {
-    if (i <= Math.floor(rating)) html += '<span class="star full">★</span>';
-    else if (i === Math.ceil(rating) && rating % 1 >= 0.5) html += '<span class="star half">★</span>';
-    else html += '<span class="star empty">☆</span>';
-  }
-  return html;
-}
-
-function renderPriority(p) {
-  const map = { P1: ['p1','🔥 Alta'], P2: ['p2','⚡ Média'], P3: ['p3','❄️ Baixa'] };
-  return `<span class="priority ${map[p][0]}">${map[p][1]}</span>`;
-}
-
-function renderStatus(s) {
-  const map = {
-    'nao-contatado': ['s-nao-contatado','Não contatado'],
-    'contatado': ['s-contatado','Contatado'],
-    'interesse': ['s-interesse','Demonstrou interesse'],
-    'reuniao': ['s-reuniao','Reunião agendada'],
-    'fechado': ['s-fechado','Fechado ✓'],
-    'sem-interesse': ['s-sem-interesse','Sem interesse'],
-  };
-  const d = map[s] || map['nao-contatado'];
-  return `<span class="status ${d[0]}" title="Clique para editar">${d[1]}</span>`;
-}
-
-function getVisibleLeads() {
-  return leads.filter(l => {
-    const matchNicho = currentFilter === 'todos' || l.nicho === currentFilter;
-    const matchSearch = !searchQuery ||
-      l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.phone.includes(searchQuery);
-    const matchStage = currentStage === 'todos' || (l.customStatus || l.status) === currentStage;
-    return matchNicho && matchSearch && matchStage;
-  });
-}
-
-function renderTable(noAnim = false) {
-  const section = document.getElementById('tableSection');
-  const visible = getVisibleLeads();
-
-  // Group by nicho
-  const grouped = {};
-  nichos.forEach(n => {
-    const gs = visible.filter(l => l.nicho === n.id);
-    if (gs.length) grouped[n.id] = { meta: n, leads: gs };
-  });
-
-  if (!Object.keys(grouped).length) {
-    section.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted)">Nenhum lead encontrado.</div>`;
-    updateStats();
-    return;
-  }
-
-  let html = '';
-  for (const nid in grouped) {
-    const g = grouped[nid];
-    html += `
-      <div class="nicho-group" id="ng-${nid}">
-        <div class="nicho-header" onclick="toggleNicho('${nid}')">
-          <span class="nicho-icon">${g.meta.icon}</span>
-          <span class="nicho-name" style="color:${g.meta.color}">${g.meta.name}</span>
-          <span class="nicho-count">${g.leads.length} leads</span>
-          <span class="nicho-chevron" id="chev-${nid}">▼</span>
-
+  <!-- ══════════════ NAV ══════════════ -->
+  <nav>
+    <div class="container">
+      <div class="nav-inner">
+        <div class="nav-brand">
+          <span class="nav-brand-name">Dr. Vinícius Scherner</span>
+          <span class="nav-brand-sub">Neurologista · Especialista em Cefaleias</span>
         </div>
-        <div class="nicho-body" id="nb-${nid}">
-          <table>
-            <thead>
-              <tr>
-                <th>NEGÓCIO</th>
-                <th>TELEFONE</th>
-                <th>AVALIAÇÃO</th>
-                <th>PRIORIDADE</th>
-                <th>STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-    `;
-    g.leads.forEach((l, rowIdx) => {
-      const sel = selectedId === l.id ? ' selected' : '';
-      const tblLinks = [];
-      if (l.instagram) tblLinks.push(`<a href="${l.instagram}" target="_blank" onclick="event.stopPropagation()" class="link-chip ig" style="font-size:9px;padding:1px 6px">📷 IG</a>`);
-      if (l.site) tblLinks.push(`<a href="${l.site}" target="_blank" onclick="event.stopPropagation()" class="link-chip site" style="font-size:9px;padding:1px 6px">🌐</a>`);
-      if (l.maps) tblLinks.push(`<a href="${l.maps}" target="_blank" onclick="event.stopPropagation()" class="link-chip maps" style="font-size:9px;padding:1px 6px">📍</a>`);
-      const wppNum = l.phone.replace(/\D/g,'');
-      const wppLink = wppNum && wppNum.length >= 10 ? `<a href="https://wa.me/55${wppNum}" target="_blank" onclick="event.stopPropagation()" class="wpp-chip" title="Abrir WhatsApp">💬 WPP</a>` : '';
-      html += `
-        <tr class="lead-row${sel}${noAnim?' no-anim':''}" id="row-${l.id}" onclick="selectLead(${l.id})" style="animation-delay:${noAnim?'0s':rowIdx * 0.03+'s'}">
-          <td>
-            <div class="lead-name">${l.name}</div>
-            ${tblLinks.length ? `<div class="table-links">${tblLinks.join('')}</div>` : ''}
-          </td>
-          <td style="white-space:nowrap"><a class="tel-link" href="tel:${l.phone}">${l.phone}</a>${wppLink}</td>
-          <td>
-            <div class="rating-row">
-              <span class="stars">${renderStars(l.rating)}</span>
-              <span class="stars-count">${l.rating} (${l.reviews.toLocaleString('pt-BR')})</span>
+        <a href="#plano" class="nav-cta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          Verificar Plano de Saúde
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══════════════ HERO ══════════════ -->
+  <section class="hero" id="inicio">
+    <div class="hero-left-wrapper" style="padding-left: max(24px, calc((100vw - 1120px)/2 + 24px))">
+      <div class="hero-accent-bar"></div>
+      <div class="hero-left">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          Especialista em Cefaleias · Salvador, BA
+        </div>
+        <h1 class="hero-h1">
+          Diagnóstico preciso<br />
+          para dores de cabeça<br />
+          <em>complexas.</em>
+        </h1>
+        <p class="hero-sub">
+          Neurologista com atuação exclusiva em cefaleias. Avaliação individualizada, tratamentos avançados e cuidado especializado para quem já tentou de tudo.
+        </p>
+        <div class="hero-actions">
+          <a href="#plano" class="btn-primary">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            Verificar meu plano de saúde
+          </a>
+          <span class="hero-note">ou ligue para a clínica mais próxima de você</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="hero-img-wrap">
+        <img src="PHOTO-2026-06-06-10-34-27.jpg" alt="Dr. Vinícius Scherner Rossi — Neurologista Especialista em Enxaqueca e Cefaleias em Salvador BA" class="hero-photo" />
+      </div>
+      <div class="hero-overlay"></div>
+      <div class="hero-stat-bar">
+        <div class="hero-stat">
+          <div class="hero-stat-n">+2</div>
+          <div class="hero-stat-l">Unidades</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-n">9</div>
+          <div class="hero-stat-l">Convênios</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-n">100<span style="font-size:18px">%</span></div>
+          <div class="hero-stat-l">Foco em Cefaleia</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONDITIONS ══════════════ -->
+  <section class="section" id="condicoes">
+    <div class="container">
+      <div class="reveal section-header">
+        <p class="eyebrow">Condições Tratadas</p>
+        <div class="rule"></div>
+        <h2 class="section-h2">Especialização onde<br /><em>outros generalizam.</em></h2>
+      </div>
+      <div class="conditions-grid reveal">
+        <div class="condition-card">
+          <!-- Enxaqueca: raio + cabeça -->
+          <svg class="condition-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M12 12v2"/><path d="M10 17l2-3 2 3"/><path d="M8.5 5.5L7 4M15.5 5.5L17 4M12 4V2"/></svg>
+          <h3 class="condition-name">Enxaqueca</h3>
+          <p class="condition-desc">Com e sem aura, crônica e episódica. Avaliação completa e plano terapêutico individualizado.</p>
+        </div>
+        <div class="condition-card">
+          <!-- Cefaleia crônica: calendário + dor -->
+          <svg class="condition-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="12" cy="15" r="2"/><path d="M12 13v-1"/></svg>
+          <h3 class="condition-name">Cefaleia Crônica</h3>
+          <p class="condition-desc">Dores de cabeça por mais de 15 dias/mês. Controle e prevenção com abordagem especializada.</p>
+        </div>
+        <div class="condition-card">
+          <!-- Cefaleia em salvas: raio intenso -->
+          <svg class="condition-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L4.5 13.5H12L11 22l8.5-11.5H12L13 2z"/></svg>
+          <h3 class="condition-name">Cefaleia em Salvas</h3>
+          <p class="condition-desc">Uma das dores mais intensas conhecidas. Tratamento específico e neuromodulação quando indicada.</p>
+        </div>
+        <div class="condition-card">
+          <!-- Neuralgia do Trigêmeo: nervo facial -->
+          <svg class="condition-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="6" r="3"/><path d="M12 9v3"/><path d="M12 12l-4 5"/><path d="M12 12l4 5"/><path d="M8 17h8"/></svg>
+          <h3 class="condition-name">Neuralgia do Trigêmeo</h3>
+          <p class="condition-desc">Dor facial de alta intensidade. Diagnóstico diferencial preciso e tratamento intervencionista.</p>
+        </div>
+        <div class="condition-card">
+          <!-- Neuralgia Occipital: região posterior -->
+          <svg class="condition-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3C8 3 5 6 5 10c0 3 1.5 5.5 4 7l.5 3h5l.5-3c2.5-1.5 4-4 4-7 0-4-3-7-7-7z"/><path d="M9 17.5c1 .3 2 .5 3 .5s2-.2 3-.5"/><line x1="12" y1="10" x2="12" y2="14"/></svg>
+          <h3 class="condition-name">Neuralgia Occipital</h3>
+          <p class="condition-desc">Dor na região posterior da cabeça. Bloqueios anestésicos e radiofrequência disponíveis.</p>
+        </div>
+        <div class="condition-card">
+          <!-- Neurite Pós-Herpética: nervo + onda -->
+          <svg class="condition-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M12 6v2M12 16v2"/></svg>
+          <h3 class="condition-name">Neurite Pós-Herpética</h3>
+          <p class="condition-desc">Dor após herpes zoster. Manejo especializado de dor neuropática crônica.</p>
+        </div>
+        <div class="condition-card">
+          <!-- Cervicogênica: pescoço + vertebras -->
+          <svg class="condition-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="9" y="2" width="6" height="4" rx="1"/><rect x="9" y="8" width="6" height="4" rx="1"/><rect x="9" y="14" width="6" height="4" rx="1"/><path d="M12 6v2M12 12v2"/></svg>
+          <h3 class="condition-name">Cefaleia Cervicogênica</h3>
+          <p class="condition-desc">Dor de cabeça originada no pescoço. Integração com tratamento da coluna cervical.</p>
+        </div>
+        <div class="condition-card">
+          <!-- Dor Facial: rosto + ponto de dor -->
+          <svg class="condition-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="10" r="6"/><path d="M9 13s1 1.5 3 1.5 3-1.5 3-1.5"/><circle cx="9.5" cy="9" r="0.5" fill="currentColor"/><circle cx="14.5" cy="9" r="0.5" fill="currentColor"/><path d="M16 5l2-2M8 5L6 3"/></svg>
+          <h3 class="condition-name">Dor Facial</h3>
+          <p class="condition-desc">Avaliação especializada para dores faciais de origem neurológica com diagnóstico diferencial completo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ ABOUT ══════════════ -->
+  <section class="section section--ice" id="sobre">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-img-wrap reveal">
+          <img src="PHOTO-2026-06-06-10-34-27.jpg" alt="Dr. Vinícius Scherner Rossi — Neurologista Especialista em Enxaqueca em Salvador BA" class="about-img" />
+          <div class="about-frame"></div>
+        </div>
+        <div class="about-text reveal">
+          <p class="eyebrow">Sobre o Especialista</p>
+          <div class="rule"></div>
+          <h2 class="section-h2" style="margin-bottom:28px">Dr. Vinícius<br /><em>Scherner</em></h2>
+          <p>Neurologista com dedicação exclusiva ao tratamento das cefaleias — as dores de cabeça que afetam a qualidade de vida de milhões de pessoas e, muitas vezes, permanecem sem diagnóstico adequado.</p>
+          <p>Sua atuação combina avaliação clínica aprofundada com os recursos mais avançados disponíveis: desde o tratamento medicamentoso individualizado até procedimentos minimamente invasivos como toxina botulínica, bloqueios anestésicos, radiofrequência e avaliação para neuromodulação implantável.</p>
+          <p>Para pacientes que já consultaram outros especialistas sem obter melhora satisfatória, o Dr. Vinícius oferece uma nova abordagem — precisa, integrada e centrada na sua história clínica.</p>
+          <div class="about-credentials">
+            <div class="credential">
+              <div class="credential-dot"></div>
+              <span class="credential-text">CREMEB 15169 · CRM-BA</span>
             </div>
-          </td>
-          <td>${renderPriority(l.customPriority || l.priority)}</td>
-          <td>${renderStatus(l.customStatus || l.status)}</td>
-        </tr>
-      `;
-    });
-    html += `</tbody></table></div></div>`;
-  }
-
-  section.innerHTML = html;
-  updateStats();
-}
-
-function toggleNicho(nid) {
-  const body = document.getElementById('nb-'+nid);
-  const chev = document.getElementById('chev-'+nid);
-  body.classList.toggle('collapsed');
-  chev.classList.toggle('collapsed', body.classList.contains('collapsed'));
-}
-
-function updateStats() {
-  const visible = getVisibleLeads();
-  const total = visible.length;
-  const p1 = visible.filter(l => (l.customPriority||l.priority) === 'P1').length;
-  const contatados = visible.filter(l => ['contatado','interesse','reuniao'].includes(l.customStatus||l.status)).length;
-  const fechados = visible.filter(l => (l.customStatus||l.status) === 'fechado').length;
-
-  document.getElementById('stat-total').textContent = total;
-  document.getElementById('stat-p1').textContent = p1;
-  document.getElementById('stat-contatados').textContent = contatados;
-  document.getElementById('stat-fechados').textContent = fechados;
-
-  // progress fills (relative to total)
-  const pct = (v) => total ? Math.round(v / total * 100) : 0;
-  requestAnimationFrame(() => {
-    document.getElementById('prog-total').style.width = '100%';
-    document.getElementById('prog-p1').style.width = pct(p1) + '%';
-    document.getElementById('prog-contatados').style.width = pct(contatados) + '%';
-    document.getElementById('prog-fechados').style.width = pct(fechados) + '%';
-  });
-
-  renderPipeline(visible);
-  renderStageSidebar();
-}
-
-function renderPipeline(visible) {
-  const stages = [
-    { key: 'nao-contatado', label: 'Não contatado', color: '#6b7280' },
-    { key: 'contatado',     label: 'Contatado',      color: '#7c6aff' },
-    { key: 'interesse',     label: 'Interesse',       color: '#fbbf24' },
-    { key: 'reuniao',       label: 'Reunião',         color: '#ff6b35' },
-    { key: 'fechado',       label: 'Fechado',         color: '#00e5a0' },
-  ];
-  const total = visible.length || 1;
-  const track = document.getElementById('pipelineTrack');
-  const legend = document.getElementById('pipelineLegend');
-  if (!track) return;
-
-  track.innerHTML = stages.map(s => {
-    const count = visible.filter(l => (l.customStatus||l.status) === s.key).length;
-    const pct = Math.max(count / total * 100, count > 0 ? 1 : 0);
-    return `<div class="pipeline-seg" style="width:${pct}%;background:${s.color}" title="${s.label}: ${count}"></div>`;
-  }).join('');
-
-  legend.innerHTML = stages.map(s => {
-    const count = visible.filter(l => (l.customStatus||l.status) === s.key).length;
-    return `<div class="pipeline-item"><span class="pipeline-dot" style="background:${s.color}"></span>${s.label} <strong>${count}</strong></div>`;
-  }).join('');
-}
-
-function animateCounters(ids) {
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const target = parseInt(el.textContent) || 0;
-    let cur = 0;
-    const step = Math.max(1, Math.ceil(target / 22));
-    const timer = setInterval(() => {
-      cur = Math.min(cur + step, target);
-      el.textContent = cur;
-      if (cur >= target) clearInterval(timer);
-    }, 28);
-  });
-}
-
-// ============================================================
-// STAGE SIDEBAR
-// ============================================================
-const STAGE_LIST = [
-  { key: 'todos',         label: 'Todos os Leads',   icon: '📁', color: 'var(--text)' },
-  { key: 'nao-contatado', label: 'Não contatado',    icon: '📭', color: '#6b7280', dividerBefore: true },
-  { key: 'contatado',     label: 'Contatado',         icon: '📬', color: '#7c6aff' },
-  { key: 'interesse',     label: 'Interesse',          icon: '⭐', color: '#fbbf24' },
-  { key: 'reuniao',       label: 'Reunião agendada',  icon: '📅', color: '#ff6b35' },
-  { key: 'fechado',       label: 'Fechado',            icon: '✅', color: '#00e5a0' },
-  { key: 'sem-interesse', label: 'Sem interesse',      icon: '🚫', color: '#ef4444' },
-];
-
-function renderStageSidebar() {
-  const sidebar = document.getElementById('stageSidebar');
-  if (!sidebar) return;
-
-  // Count against nicho+search but NOT stage (so all stage counts are visible)
-  const base = leads.filter(l => {
-    const matchNicho = currentFilter === 'todos' || l.nicho === currentFilter;
-    const matchSearch = !searchQuery ||
-      l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.phone.includes(searchQuery);
-    return matchNicho && matchSearch;
-  });
-
-  sidebar.innerHTML = `<div class="stage-sidebar-title">Etapas</div>` +
-    STAGE_LIST.map(s => {
-      const count = s.key === 'todos'
-        ? base.length
-        : base.filter(l => (l.customStatus || l.status) === s.key).length;
-      const active = currentStage === s.key ? ' active' : '';
-      const divider = s.dividerBefore ? '<div class="stage-divider"></div>' : '';
-      return `${divider}<div class="stage-item${active}" onclick="filterStage('${s.key}')" style="--stage-color:${s.color}">
-        <span class="stage-icon">${s.icon}</span>
-        <span class="stage-label">${s.label}</span>
-        <span class="stage-count">${count}</span>
-      </div>`;
-    }).join('');
-}
-
-function filterStage(stage) {
-  currentStage = stage;
-  selectedId = null;
-  renderTable();
-}
-
-// ============================================================
-// DETAIL PANEL
-// ============================================================
-function selectLead(id) {
-  selectedId = id;
-  document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
-  const row = document.getElementById('row-'+id);
-  if (row) row.classList.add('selected');
-  renderDetail();
-  if (isDrawer()) openMobilePanel();
-}
-
-function renderDetail() {
-  const lead = getLead(selectedId);
-  if (!lead) return;
-
-  document.getElementById('detailEmpty').style.display = 'none';
-  const content = document.getElementById('detailContent');
-  content.style.display = 'flex';
-  content.classList.add('visible');
-
-  const nicho = nichos.find(n => n.id === lead.nicho);
-  const script = (scripts[lead.nicho] || scripts.restaurante)(lead.name);
-
-  const statusOpts = [
-    ['nao-contatado','Não contatado'],
-    ['contatado','Contatado'],
-    ['interesse','Com interesse'],
-    ['reuniao','Reunião agendada'],
-    ['fechado','Fechado ✓'],
-    ['sem-interesse','Sem interesse'],
-  ];
-  const priorityOpts = [['P1','🔥 Alta','p1-opt'],['P2','⚡ Média','p2-opt'],['P3','❄️ Baixa','p3-opt']];
-
-  const curStatus = lead.customStatus || lead.status;
-  const curPriority = lead.customPriority || lead.priority;
-
-  const linksArr = [];
-  if (lead.instagram) linksArr.push(`<a href="${lead.instagram}" target="_blank" class="link-chip ig">📷 Instagram</a>`);
-  if (lead.site) linksArr.push(`<a href="${lead.site}" target="_blank" class="link-chip site">🌐 Site</a>`);
-  if (lead.maps) linksArr.push(`<a href="${lead.maps}" target="_blank" class="link-chip maps">📍 Maps</a>`);
-  const linksHtml = linksArr.length ? `<div class="links-row">${linksArr.join('')}</div>` : '<span style="color:var(--muted);font-size:11px">—</span>';
-
-  content.innerHTML = `
-    <div class="detail-top">
-      <div class="detail-nicho-tag">${nicho.icon} ${nicho.name}</div>
-      <div class="detail-name">${lead.name}</div>
-      <div class="detail-addr">${lead.addr}</div>
-      <div class="detail-row" style="margin-top:8px">
-        <span class="detail-label">Telefone</span>
-        <a class="tel-link" href="tel:${lead.phone}">${lead.phone}</a>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Avaliação</span>
-        <span class="stars" style="font-size:12px">${renderStars(lead.rating)}</span>
-        <span class="stars-count">${lead.rating} · ${lead.reviews.toLocaleString('pt-BR')} reviews</span>
-      </div>
-      <div class="detail-row" style="align-items:flex-start;gap:6px">
-        <span class="detail-label" style="padding-top:3px">Links</span>
-        ${linksHtml}
+            <div class="credential">
+              <div class="credential-dot"></div>
+              <span class="credential-text">RQE 8127 — Especialista em Neurologia</span>
+            </div>
+            <div class="credential">
+              <div class="credential-dot"></div>
+              <span class="credential-text">RQE 22317 — Área de Atuação em Dor (Neurologia)</span>
+            </div>
+            <div class="credential">
+              <div class="credential-dot"></div>
+              <span class="credential-text">Especialista em enxaqueca e cefaleias complexas</span>
+            </div>
+            <div class="credential">
+              <div class="credential-dot"></div>
+              <span class="credential-text">Atendimento em 2 unidades em Salvador, BA</span>
+            </div>
+            <div class="credential">
+              <div class="credential-dot"></div>
+              <span class="credential-text">Procedimentos minimamente invasivos disponíveis</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+  </section>
 
-    <div>
-      <div class="section-title"><span>📌 Observação do Lead</span></div>
-      <div style="color:var(--muted);font-size:11px;line-height:1.7;padding:6px 0">${lead.obs}</div>
-    </div>
-
-    <div>
-      <div class="section-title"><span>🔥 Prioridade</span></div>
-      <div class="priority-grid">
-        ${priorityOpts.map(([v,l,cls]) => `
-          <button class="priority-opt ${cls}${curPriority===v?' active':''}" onclick="setPriority(${lead.id},'${v}',this)">${l}</button>
-        `).join('')}
+  <!-- ══════════════ TREATMENTS ══════════════ -->
+  <section class="section" id="tratamentos">
+    <div class="container">
+      <div class="reveal section-header">
+        <p class="eyebrow">Tratamentos Disponíveis</p>
+        <div class="rule"></div>
+        <h2 class="section-h2">Do clínico ao<br /><em>intervencionista.</em></h2>
+      </div>
+      <div class="treatments-grid reveal">
+        <div class="treatment-card">
+          <div class="treatment-num">01</div>
+          <h3 class="treatment-name">Toxina Botulínica</h3>
+          <p class="treatment-desc">Aprovada para enxaqueca crônica. Aplicação precisa com protocolo individualizado.</p>
+        </div>
+        <div class="treatment-card">
+          <div class="treatment-num">02</div>
+          <h3 class="treatment-name">Bloqueios Anestésicos</h3>
+          <p class="treatment-desc">Nervo occipital maior, SPG e outros. Alívio rápido e diagnóstico simultâneo.</p>
+        </div>
+        <div class="treatment-card">
+          <div class="treatment-num">03</div>
+          <h3 class="treatment-name">Radiofrequência</h3>
+          <p class="treatment-desc">Para neuralgias refratárias. Procedimento minimamente invasivo com resultado duradouro.</p>
+        </div>
+        <div class="treatment-card">
+          <div class="treatment-num">04</div>
+          <h3 class="treatment-name">Neuromodulação</h3>
+          <p class="treatment-desc">Avaliação para implantes neuromodulatórios em casos selecionados e refratários.</p>
+        </div>
+        <div class="treatment-card">
+          <div class="treatment-num">05</div>
+          <h3 class="treatment-name">Tratamento Clínico</h3>
+          <p class="treatment-desc">Diagnóstico preciso, protocolo preventivo e de crise, acompanhamento contínuo.</p>
+        </div>
       </div>
     </div>
+  </section>
 
-    <div>
-      <div class="section-title"><span>📊 Status do Contato</span></div>
-      <div class="status-grid">
-        ${statusOpts.map(([v,l]) => `
-          <button class="status-opt${curStatus===v?' active':''}" data-v="${v}" onclick="setStatus(${lead.id},'${v}',this)">${l}</button>
-        `).join('')}
+  <!-- ══════════════ PLAN SELECTOR ══════════════ -->
+  <section class="plan-section" id="plano">
+    <div class="container">
+      <p class="eyebrow">Agendamento Facilitado</p>
+      <h2 class="plan-h2">Qual é o seu<br /><em>plano de saúde?</em></h2>
+      <p class="plan-sub">Selecione seu convênio abaixo para descobrir em qual unidade você pode ser atendido e agendar diretamente pelo WhatsApp.</p>
+
+      <div class="plan-pills" id="planPills">
+        <button class="plan-pill" data-plan="Bradesco">Bradesco Saúde</button>
+        <button class="plan-pill" data-plan="SulAmérica">SulAmérica</button>
+        <button class="plan-pill" data-plan="Petrobras">Petrobras</button>
+        <button class="plan-pill" data-plan="Mediservice">Mediservice</button>
+        <button class="plan-pill" data-plan="GEAP">GEAP</button>
+        <button class="plan-pill" data-plan="Cassi">Cassi</button>
+        <button class="plan-pill" data-plan="Assefaz">Assefaz</button>
+        <button class="plan-pill" data-plan="Saúde Caixa">Saúde Caixa</button>
+        <button class="plan-pill" data-plan="Particular">Particular / Sem Convênio</button>
+      </div>
+
+      <div class="plan-result" id="planResult">
+        <div class="plan-result-grid" id="planResultGrid"></div>
+        <p class="plan-note" id="planNote"></p>
       </div>
     </div>
+  </section>
 
-    <div>
-      <div class="section-title"><span>📝 Suas Anotações</span></div>
-      <textarea class="notes-field" id="notes-${lead.id}" placeholder="Observações, respostas, próximas ações...">${lead.customObs || ''}</textarea>
+  <!-- ══════════════ HOW IT WORKS ══════════════ -->
+  <section class="section section--ice" id="como-funciona">
+    <div class="container">
+      <div class="reveal section-header">
+        <p class="eyebrow">Como Funciona</p>
+        <div class="rule"></div>
+        <h2 class="section-h2">Simples de<br /><em>agendar.</em></h2>
+      </div>
+      <div class="steps reveal" style="margin-top:56px">
+        <div class="step">
+          <div class="step-n">01</div>
+          <h3 class="step-title">Verifique seu convênio</h3>
+          <p class="step-desc">Use o seletor acima para identificar em qual unidade o seu plano é aceito.</p>
+        </div>
+        <div class="step">
+          <div class="step-n">02</div>
+          <h3 class="step-title">Entre em contato</h3>
+          <p class="step-desc">Clique no botão WhatsApp da unidade correspondente e informe seu plano.</p>
+        </div>
+        <div class="step">
+          <div class="step-n">03</div>
+          <h3 class="step-title">Agende sua consulta</h3>
+          <p class="step-desc">Nossa equipe confirma disponibilidade e orienta sobre documentação necessária.</p>
+        </div>
+        <div class="step">
+          <div class="step-n">04</div>
+          <h3 class="step-title">Sua avaliação</h3>
+          <p class="step-desc">Consulta completa, diagnóstico especializado e plano de tratamento individualizado.</p>
+        </div>
+      </div>
     </div>
+  </section>
 
-    <div>
-      <div class="section-title"><span>💬 Script de Abordagem (WhatsApp)</span></div>
-      <div class="script-box" id="script-${lead.id}">${script}<button class="copy-btn" onclick="copyScript(${lead.id})">Copiar</button></div>
+  <!-- ══════════════ CLINICS ══════════════ -->
+  <section class="section" id="unidades">
+    <div class="container">
+      <div class="reveal section-header">
+        <p class="eyebrow">Unidades de Atendimento</p>
+        <div class="rule"></div>
+        <h2 class="section-h2">Duas unidades<br /><em>em Salvador.</em></h2>
+      </div>
+      <div class="clinics-grid reveal">
+
+        <!-- NEUROLIV -->
+        <div class="clinic-card">
+          <div class="clinic-header">
+            <div class="clinic-logo-area">
+              <div class="clinic-initial">N</div>
+              <div>
+                <div class="clinic-name">Neuroliv</div>
+                <div class="clinic-addr">Mundo Plaza · Caminho das Árvores · Salvador, BA</div>
+              </div>
+            </div>
+            <div class="clinic-address-block">
+              <div class="clinic-address-row">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>Empresarial Mundo Plaza — Av. Tancredo Neves, 620<br/>Sala 1513 · Caminho das Árvores · Salvador, BA · 41820-020</span>
+              </div>
+              <a class="clinic-map-link" href="https://www.google.com/maps/search/?api=1&query=Av.+Tancredo+Neves+620+Caminho+das+Arvores+Salvador+BA" target="_blank" rel="noopener">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Abrir no Google Maps
+              </a>
+            </div>
+          </div>
+          <div class="clinic-body">
+            <p class="clinic-plans-heading">Convênios Aceitos</p>
+            <div class="clinic-tags">
+              <span class="clinic-tag">Bradesco Saúde</span>
+              <span class="clinic-tag">SulAmérica</span>
+              <span class="clinic-tag">Petrobras</span>
+              <span class="clinic-tag">Mediservice</span>
+              <span class="clinic-tag">Particular</span>
+            </div>
+            <a href="https://wa.me/557199223736?text=Olá,%20gostaria%20de%20agendar%20uma%20consulta%20com%20o%20Dr.%20Vinícius%20Scherner%20na%20Neuroliv." class="btn-whatsapp" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              WhatsApp Neuroliv · (71) 99922-3736
+            </a>
+          </div>
+        </div>
+
+        <!-- INB -->
+        <div class="clinic-card">
+          <div class="clinic-header">
+            <div class="clinic-logo-area">
+              <div class="clinic-initial" style="background: var(--glacier); color: var(--dark);">I</div>
+              <div>
+                <div class="clinic-name">INB Neurologia</div>
+                <div class="clinic-addr">Itaigara · Salvador, BA</div>
+              </div>
+            </div>
+            <div class="clinic-address-block">
+              <div class="clinic-address-row">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>Av. Antônio Carlos Magalhães, 585<br/>Sala 803 · Itaigara · Salvador, BA · 41825-907</span>
+              </div>
+              <a class="clinic-map-link" href="https://www.google.com/maps/search/?api=1&query=Av.+Antonio+Carlos+Magalhaes+585+Itaigara+Salvador+BA" target="_blank" rel="noopener">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Abrir no Google Maps
+              </a>
+            </div>
+          </div>
+          <div class="clinic-body">
+            <p class="clinic-plans-heading">Convênios Aceitos</p>
+            <div class="clinic-tags">
+              <span class="clinic-tag">Bradesco Saúde</span>
+              <span class="clinic-tag">Mediservice</span>
+              <span class="clinic-tag">Petrobras</span>
+              <span class="clinic-tag">GEAP</span>
+              <span class="clinic-tag">Cassi</span>
+              <span class="clinic-tag">Assefaz</span>
+              <span class="clinic-tag">Saúde Caixa</span>
+              <span class="clinic-tag">Particular</span>
+            </div>
+            <a href="https://wa.me/5571991532253?text=Olá,%20gostaria%20de%20agendar%20uma%20consulta%20com%20o%20Dr.%20Vinícius%20Scherner%20no%20INB." class="btn-whatsapp" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              WhatsApp INB · (71) 99153-2253
+            </a>
+          </div>
+        </div>
+
+      </div>
+      <p style="margin-top:24px; font-size:13px; color:var(--mid); text-align:center; letter-spacing:0.04em;">
+        Dúvidas sobre cobertura ou elegibilidade? Entre em contato com a clínica pelo WhatsApp antes de agendar.
+      </p>
     </div>
+  </section>
 
-    <button class="save-btn" onclick="saveDetail(${lead.id})">✓ Salvar Alterações</button>
-  `;
-}
+  <!-- ══════════════ FINAL CTA ══════════════ -->
+  <section class="cta-section">
+    <div class="container">
+      <h2 class="cta-h2">Pronto para dar o<br />próximo passo?</h2>
+      <p class="cta-sub">Agende sua avaliação com um especialista exclusivo em cefaleias. Diagnóstico preciso. Tratamento individualizado.</p>
+      <div class="cta-btns">
+        <a href="https://wa.me/557199223736?text=Olá,%20gostaria%20de%20agendar%20uma%20consulta%20com%20o%20Dr.%20Vinícius%20na%20Neuroliv." class="btn-white" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          Neuroliv – Mundo Plaza
+        </a>
+        <a href="https://wa.me/5571991532253?text=Olá,%20gostaria%20de%20agendar%20uma%20consulta%20com%20o%20Dr.%20Vinícius%20no%20INB." class="btn-outline-white" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          INB – Itaigara
+        </a>
+      </div>
+    </div>
+  </section>
 
-function setPriority(id, val, btn) {
-  btn.closest('.priority-grid').querySelectorAll('.priority-opt').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const lead = getLead(id);
-  if (!lead) return;
-  lead.customPriority = val;
-  // Atualiza o badge na linha da tabela imediatamente (sem salvar)
-  const rowPrioEl = document.querySelector(`#row-${id} .priority`);
-  if (rowPrioEl) {
-    const map = { P1: ['p1','🔥 Alta'], P2: ['p2','⚡ Média'], P3: ['p3','❄️ Baixa'] };
-    rowPrioEl.className = `priority ${map[val][0]}`;
-    rowPrioEl.textContent = map[val][1];
-  }
-}
+  <!-- ══════════════ FOOTER ══════════════ -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand-name">Dr. Vinícius Scherner</div>
+          <div class="footer-brand-sub">Neurologista · Especialista em Cefaleias</div>
+        </div>
+        <div class="footer-contact">
+          <a href="https://wa.me/557199223736" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            Neuroliv: (71) 99922-3736
+          </a>
+          <a href="https://wa.me/5571991532253" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            INB: (71) 99153-2253
+          </a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-copy">© 2025 Dr. Vinícius Scherner Rossi · Todos os direitos reservados</span>
+        <span class="footer-crm">CREMEB 15169 · RQE 8127 (Neurologia) · RQE 22317 (Neurologia/Dor)</span>
+      </div>
+    </div>
+  </footer>
 
-function setStatus(id, val, btn) {
-  btn.closest('.status-grid').querySelectorAll('.status-opt').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const lead = getLead(id);
-  if (!lead) return;
-  lead.customStatus = val;
-  // Atualiza o badge na linha da tabela imediatamente (sem salvar)
-  const rowStatusEl = document.querySelector(`#row-${id} .status`);
-  if (rowStatusEl) {
-    const statusMap = {
-      'nao-contatado': ['s-nao-contatado','Não contatado'],
-      'contatado':     ['s-contatado','Contatado'],
-      'interesse':     ['s-interesse','Demonstrou interesse'],
-      'reuniao':       ['s-reuniao','Reunião agendada'],
-      'fechado':       ['s-fechado','Fechado ✓'],
-      'sem-interesse': ['s-sem-interesse','Sem interesse'],
+  <!-- ══════════════ JS ══════════════ -->
+  <script>
+    // ── Plan Selector Logic ──────────────────────────────
+    const clinics = {
+      neuroliv: {
+        name: 'Neuroliv',
+        location: 'Caminho das Árvores · Salvador, BA',
+        address: 'Av. Tancredo Neves, 620 — Sala 1513',
+        maps: 'https://www.google.com/maps/search/?api=1&query=Av.+Tancredo+Neves+620+Caminho+das+Arvores+Salvador+BA',
+        plans: ['Bradesco', 'SulAmérica', 'Petrobras', 'Mediservice', 'Particular'],
+        wa: 'https://wa.me/557199223736?text=Olá,%20gostaria%20de%20agendar%20uma%20consulta%20com%20o%20Dr.%20Vinícius%20Scherner%20na%20Neuroliv.',
+        waLabel: 'Agendar na Neuroliv'
+      },
+      inb: {
+        name: 'INB Neurologia',
+        location: 'Itaigara · Salvador, BA',
+        address: 'Av. Antônio Carlos Magalhães, 585 — Sala 803',
+        maps: 'https://www.google.com/maps/search/?api=1&query=Av.+Antonio+Carlos+Magalhaes+585+Itaigara+Salvador+BA',
+        plans: ['Bradesco', 'Mediservice', 'Petrobras', 'GEAP', 'Cassi', 'Assefaz', 'Saúde Caixa', 'Particular'],
+        wa: 'https://wa.me/5571991532253?text=Olá,%20gostaria%20de%20agendar%20uma%20consulta%20com%20o%20Dr.%20Vinícius%20Scherner%20no%20INB.',
+        waLabel: 'Agendar no INB'
+      }
     };
-    const d = statusMap[val] || statusMap['nao-contatado'];
-    rowStatusEl.className = `status ${d[0]}`;
-    rowStatusEl.textContent = d[1];
-  }
-}
 
-function saveDetail(id) {
-  const lead = getLead(id);
-  if (!lead) return;
-  const notes = document.getElementById('notes-'+id);
-  if (notes) lead.customObs = notes.value;
-
-  const btn = document.querySelector('.save-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<span class="btn-spinner"></span> Salvando...';
-  }
-
-  // Sincroniza com o backend (fire-and-forget, não bloqueia a UI)
-  apiPost({
-    action:         'update',
-    id:             id,
-    customStatus:   lead.customStatus,
-    customPriority: lead.customPriority,
-    customObs:      lead.customObs,
-  }).then(() => {
-    if (document.getElementById('activityBar').classList.contains('open')) {
-      loadHistory();
+    // Normalize plan name for matching
+    function normalize(s) {
+      return s.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g,'a').replace(/[éêe]/g,'e').replace(/[íi]/g,'i').replace(/[óôõo]/g,'o').replace(/[úu]/g,'u').replace(/[ç]/g,'c');
     }
-  });
 
-  setTimeout(() => {
-    saveLeads();
-    renderTable(true); // noAnim = true, sem flash de animação
-    const stillVisible = getVisibleLeads().find(l => l.id === id);
-    const stageInfo = STAGE_LIST.find(s => s.key === (lead.customStatus || lead.status));
-    if (stillVisible) {
-      // Lead continua na etapa atual — mantém seleção
-      setTimeout(() => {
-        document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
-        const row = document.getElementById('row-'+id);
-        if (row) row.classList.add('selected');
-      }, 10);
-      if (btn) {
-        btn.innerHTML = '✓ Salvo!';
+    function clinicAccepts(clinic, plan) {
+      return clinic.plans.some(p => normalize(p) === normalize(plan));
+    }
+
+    function wasvgIcon() {
+      return `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>`;
+    }
+
+    const pinIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.7"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+    const extIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+
+    function renderClinicCard(clinic, selectedPlan, isMatch) {
+      const tagsHtml = clinic.plans.map(p => {
+        const match = normalize(p) === normalize(selectedPlan);
+        return `<span class="clinic-plan-tag${match ? ' match' : ''}">${p}</span>`;
+      }).join('');
+
+      return `
+        <div class="clinic-result-card${isMatch ? ' highlighted' : ''}">
+          <div class="clinic-result-name">${clinic.name}</div>
+          <div class="clinic-result-loc">${clinic.location}</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:12px;color:rgba(255,255,255,0.5);line-height:1.5">
+            ${pinIcon}
+            <span>${clinic.address}</span>
+          </div>
+          <a href="${clinic.maps}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--glacier);margin-bottom:20px;opacity:0.8;transition:opacity 0.2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
+            ${extIcon} Abrir no Maps
+          </a>
+          <div class="clinic-plans-list">${tagsHtml}</div>
+          <a href="${clinic.wa}" class="btn-whatsapp" target="_blank" rel="noopener">
+            ${wasvgIcon()}
+            ${clinic.waLabel}
+          </a>
+        </div>`;
+    }
+
+    function selectPlan(plan) {
+      const result = document.getElementById('planResult');
+      const grid = document.getElementById('planResultGrid');
+      const note = document.getElementById('planNote');
+
+      // Remove and re-add class to re-trigger animation
+      result.classList.remove('show');
+      void result.offsetWidth;
+
+      if (plan === 'Particular') {
+        grid.innerHTML = `
+          <div class="clinic-result-card highlighted">
+            <div class="clinic-result-name">Neuroliv</div>
+            <div class="clinic-result-loc">Mundo Plaza · Salvador, BA</div>
+            <div style="margin-bottom:28px">
+              <p class="plan-particular-msg">Atendimento particular disponível. Entre em contato para valores e disponibilidade.</p>
+            </div>
+            <a href="${clinics.neuroliv.wa}" class="btn-whatsapp" target="_blank" rel="noopener">
+              ${wasvgIcon()} Agendar na Neuroliv
+            </a>
+          </div>
+          <div class="clinic-result-card highlighted">
+            <div class="clinic-result-name">INB Neurologia</div>
+            <div class="clinic-result-loc">Itaigara · Salvador, BA</div>
+            <div style="margin-bottom:28px">
+              <p class="plan-particular-msg">Atendimento particular disponível. Entre em contato para valores e disponibilidade.</p>
+            </div>
+            <a href="${clinics.inb.wa}" class="btn-whatsapp" target="_blank" rel="noopener">
+              ${wasvgIcon()} Agendar no INB
+            </a>
+          </div>`;
+        note.textContent = 'Ambas as unidades realizam atendimento particular.';
+      } else {
+        const neuroliv = clinicAccepts(clinics.neuroliv, plan);
+        const inb = clinicAccepts(clinics.inb, plan);
+
+        let html = '';
+
+        // Show matching clinics first
+        if (neuroliv) html += renderClinicCard(clinics.neuroliv, plan, true);
+        if (inb)      html += renderClinicCard(clinics.inb, plan, true);
+        if (!neuroliv) html += renderClinicCard(clinics.neuroliv, plan, false);
+        if (!inb)      html += renderClinicCard(clinics.inb, plan, false);
+
+        grid.innerHTML = html;
+
+        const matchCount = (neuroliv ? 1 : 0) + (inb ? 1 : 0);
+        if (matchCount === 2) {
+          note.textContent = `O plano ${plan} é aceito em ambas as unidades. Escolha a mais conveniente para você.`;
+        } else if (matchCount === 1) {
+          const matchName = neuroliv ? 'Neuroliv – Mundo Plaza' : 'INB – Itaigara';
+          note.textContent = `O plano ${plan} é aceito apenas na unidade ${matchName}.`;
+        } else {
+          note.textContent = `Não encontramos cobertura para ${plan}. Entre em contato para confirmar com a equipe.`;
+        }
+      }
+
+      result.classList.add('show');
+    }
+
+    // Pill click handlers
+    document.querySelectorAll('.plan-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.plan-pill').forEach(b => b.classList.remove('active', 'active-both'));
+        const plan = btn.dataset.plan;
+        if (plan !== 'Particular') {
+          const n = clinicAccepts(clinics.neuroliv, plan);
+          const i = clinicAccepts(clinics.inb, plan);
+          if (n && i) btn.classList.add('active-both');
+          else btn.classList.add('active');
+        } else {
+          btn.classList.add('active-both');
+        }
+        selectPlan(plan);
+      });
+    });
+
+    // ── Scroll Reveal ────────────────────────────────────
+    const revealEls = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
+    revealEls.forEach(el => observer.observe(el));
+
+    // Stagger children in grids
+    document.querySelectorAll('.conditions-grid, .treatments-grid, .steps').forEach(grid => {
+      Array.from(grid.children).forEach((child, i) => {
+        child.classList.add('reveal');
+        child.style.transitionDelay = `${i * 70}ms`;
+        observer.observe(child);
+      });
+    });
+
+    // Stagger clinic cards
+    document.querySelectorAll('.clinics-grid .clinic-card').forEach((card, i) => {
+      card.classList.add('reveal');
+      card.style.transitionDelay = `${i * 120}ms`;
+      observer.observe(card);
+    });
+
+    // ── Stat counter animation ─────────────────────────
+    const statNums = document.querySelectorAll('.hero-stat-n');
+    statNums.forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(12px)';
+      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    });
+    setTimeout(() => {
+      statNums.forEach((el, i) => {
         setTimeout(() => {
-          btn.innerHTML = '✓ Salvar Alterações';
-          btn.disabled = false;
-        }, 1200);
-      }
-    } else {
-      // Lead foi movido para outra etapa — fecha o painel
-      selectedId = null;
-      document.getElementById('detailEmpty').style.display = '';
-      const content = document.getElementById('detailContent');
-      content.classList.remove('visible');
-      content.style.display = 'none';
-      if (isDrawer()) {
-        document.getElementById('detailPanel').classList.remove('mobile-open');
-        document.getElementById('mobileOverlay').classList.remove('show');
-        document.body.style.overflow = '';
-      }
-    }
-    showToast(stageInfo ? `${stageInfo.icon} Movido para: ${stageInfo.label}` : '✓ Salvo com sucesso');
-  }, 320);
-}
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+        }, i * 150 + 900);
+      });
+    }, 0);
 
-function copyScript(id) {
-  const el = document.getElementById('script-'+id);
-  const text = el.textContent.replace('Copiar','').trim();
-  navigator.clipboard.writeText(text).then(() => showToast('Script copiado!'));
-}
+    // ── Active nav link on scroll ──────────────────────
+    const sections = document.querySelectorAll('section[id]');
+    const navObserver = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          document.title = document.title; // keep title stable
+        }
+      });
+    }, { threshold: 0.4 });
+  </script>
 
-function showToast(msg = '✓ Salvo com sucesso') {
-  const t = document.getElementById('toast');
-  t.textContent = msg.startsWith('✓') || msg.includes('→') ? msg : '✓ ' + msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
-}
-
-// ============================================================
-// FILTERS
-// ============================================================
-function filterLeads(q) {
-  searchQuery = q;
-  const clearBtn = document.getElementById('searchClear');
-  if (clearBtn) clearBtn.classList.toggle('show', q.length > 0);
-  renderTable();
-}
-
-function clearSearch() {
-  searchQuery = '';
-  const inp = document.getElementById('searchInput');
-  if (inp) inp.value = '';
-  const clearBtn = document.getElementById('searchClear');
-  if (clearBtn) clearBtn.classList.remove('show');
-  renderTable();
-}
-
-function filterNicho(nicho, btn) {
-  currentFilter = nicho;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderTable();
-}
-
-// ============================================================
-// EXPORT CSV
-// ============================================================
-function exportCSV() {
-  const visible = getVisibleLeads();
-  const cols = ['ID','Nicho','Nome','Telefone','Avaliação','Reviews','Prioridade','Status','Obs Lead','Anotações'];
-  const rows = visible.map(l => [
-    l.id,
-    nichos.find(n=>n.id===l.nicho)?.name || l.nicho,
-    l.name,
-    l.phone,
-    l.rating,
-    l.reviews,
-    l.customPriority || l.priority,
-    l.customStatus || l.status,
-    l.obs,
-    l.customObs || ''
-  ].map(v => `"${String(v).replace(/"/g,'""')}"`));
-
-  const csv = [cols.join(','), ...rows.map(r => r.join(','))].join('\n');
-  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `prospecao_vilas_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-}
-
-// ============================================================
-// DRAWER — ativa quando viewport não cabe duas colunas
-// Threshold: quando a coluna de detalhe ficaria < 240px
-// ============================================================
-const DRAWER_THRESHOLD = 660; // px — abaixo disso vai pra drawer
-
-function isDrawer() { return document.body.classList.contains('drawer-mode'); }
-
-function syncLayout() {
-  const w = window.innerWidth;
-  const drawer = w < DRAWER_THRESHOLD;
-  document.body.classList.toggle('drawer-mode', drawer);
-
-  // Ajusta altura do main para descontar o chrome real
-  const chrome = document.querySelector('.header')?.offsetHeight +
-                 document.querySelector('.stats-bar')?.offsetHeight +
-                 (drawer ? 0 : document.querySelector('.pipeline-bar')?.offsetHeight || 0) +
-                 document.querySelector('.toolbar')?.offsetHeight +
-                 (drawer ? document.querySelector('.stage-sidebar')?.offsetHeight || 0 : 0) || 175;
-  document.documentElement.style.setProperty('--chrome-h', chrome + 'px');
-}
-
-// Reage a qualquer mudança de tamanho (rotação, resize, teclado virtual)
-const _ro = new ResizeObserver(() => syncLayout());
-_ro.observe(document.documentElement);
-
-function openMobilePanel() {
-  document.getElementById('detailPanel').classList.add('mobile-open');
-  document.getElementById('mobileOverlay').classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeMobilePanel() {
-  selectedId = null;
-  document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
-  document.getElementById('detailPanel').classList.remove('mobile-open');
-  document.getElementById('mobileOverlay').classList.remove('show');
-  document.body.style.overflow = '';
-  document.getElementById('detailEmpty').style.display = '';
-  const content = document.getElementById('detailContent');
-  content.classList.remove('visible');
-  content.style.display = 'none';
-}
-
-// ============================================================
-// KEYBOARD SHORTCUTS
-// ============================================================
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && selectedId) {
-    if (isDrawer()) { closeMobilePanel(); return; }
-    selectedId = null;
-    document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
-    document.getElementById('detailEmpty').style.display = '';
-    const content = document.getElementById('detailContent');
-    content.classList.remove('visible');
-    content.style.display = 'none';
-  }
-  if (e.ctrlKey && e.key === 's') {
-    e.preventDefault();
-    if (selectedId) saveDetail(selectedId);
-  }
-});
-
-// ============================================================
-// INIT
-// ============================================================
-syncLayout();
-document.getElementById('activityDot').classList.add('offline');
-
-initLeads().then(() => {
-  setTimeout(() => animateCounters(['stat-total','stat-p1','stat-contatados','stat-fechados']), 100);
-  _historyInterval = setInterval(() => {
-    if (document.getElementById('activityBar').classList.contains('open')) {
-      loadHistory();
-    }
-  }, 30000);
-}).catch(() => {
-  // fallback: API indisponível — usa localStorage
-  renderTable();
-  setTimeout(() => animateCounters(['stat-total','stat-p1','stat-contatados','stat-fechados']), 100);
-});
-</script>
 </body>
 </html>
